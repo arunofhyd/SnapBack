@@ -1,0 +1,293 @@
+cd ~/Desktop
+
+# 1. Delete old file
+rm -f WindowSaverUltimate.swift
+
+# 2. Write new code with Case-Insensitive Check
+cat > WindowSaverUltimate.swift <<'EOF'
+import Cocoa
+
+// --- CONFIGURATION ---
+let appTitle = "WindowSaver Pro"
+let fileManager = FileManager.default
+let home = fileManager.homeDirectoryForCurrentUser
+let storageFolder = home.appendingPathComponent("Pictures/WindowSaver_Profiles")
+
+try? fileManager.createDirectory(at: storageFolder, withIntermediateDirectories: true)
+
+// --- HELPERS ---
+
+func runShell(_ command: String) {
+    let task = Process()
+    task.launchPath = "/bin/zsh"
+    task.arguments = ["-c", command]
+    task.launch()
+    task.waitUntilExit()
+}
+
+func runAppleScript(_ source: String) -> String? {
+    if let script = NSAppleScript(source: source) {
+        var error: NSDictionary?
+        let result = script.executeAndReturnError(&error)
+        if let err = error { print("Script Error: \(err)"); return nil }
+        return result.stringValue
+    }
+    return nil
+}
+
+func getSavedProfiles() -> [String] {
+    guard let files = try? fileManager.contentsOfDirectory(atPath: storageFolder.path) else { return [] }
+    return files.filter { $0.hasSuffix(".scpt") }.map { $0.replacingOccurrences(of: ".scpt", with: "") }
+}
+
+func deleteProfile(name: String) {
+    let scriptFile = storageFolder.appendingPathComponent("\(name).scpt")
+    let imgFile = storageFolder.appendingPathComponent("\(name).png")
+    try? fileManager.removeItem(at: scriptFile)
+    try? fileManager.removeItem(at: imgFile)
+}
+
+// --- CORE LOGIC ---
+
+func saveProfile(name: String) {
+    let dataFile = storageFolder.appendingPathComponent("\(name).scpt")
+    let imgFile = storageFolder.appendingPathComponent("\(name).png")
+    
+    let script = #"""
+    script DataCarrier
+        property mainData : {}
+    end script
+    
+    set thePath to "\#(dataFile.path)"
+    
+    tell application "System Events"
+        set processList to (every process where background only is false)
+        repeat with proc in processList
+            try
+                set appName to name of proc
+                
+                -- FILTER: Ignore background helpers
+                if appName is not "app_mode_loader" and appName is not "ControlCenter" and appName is not "WindowSaver" then
+                    
+                    tell proc
+                        set allWindows to every window
+                        repeat with i from 1 to count of allWindows
+                            set thisWindow to item i of allWindows
+                            set wPos to position of thisWindow
+                            set wSize to size of thisWindow
+                            set wUrl to ""
+                            
+                            if appName is "Safari" and i is 1 then
+                                tell application "Safari" to set wUrl to URL of document 1
+                            else if appName is "Google Chrome" and i is 1 then
+                                tell application "Google Chrome" to set wUrl to URL of active tab of window 1
+                            end if
+                            
+                            set end of mainData of DataCarrier to {processName:appName, winIndex:i, wPos:wPos, wSize:wSize, savedUrl:wUrl}
+                        end repeat
+                    end tell
+                    
+                end if
+            end try
+        end repeat
+    end tell
+    
+    set theFile to POSIX file thePath
+    store script DataCarrier in theFile replacing yes
+    """#
+    
+    _ = runAppleScript(script)
+    runShell("screencapture -x \(String(format: "%@", imgFile.path))")
+}
+
+func restoreProfile(name: String) {
+    let dataFile = storageFolder.appendingPathComponent("\(name).scpt")
+    
+    // RESTORE LOGIC: LAUNCH -> WAIT -> RESTORE
+    let script = #"""
+    set theFile to POSIX file "\#(dataFile.path)"
+    try
+        set loadedScript to load script theFile
+        set windowPositions to mainData of loadedScript
+        
+        -- PHASE 1: Launch all apps first
+        repeat with winRecord in windowPositions
+            set appName to processName of winRecord
+            try
+                tell application appName to activate
+            end try
+        end repeat
+        
+        -- PHASE 2: Wait loop (Give apps 2 seconds to actually open)
+        delay 2
+        
+        -- PHASE 3: Apply Layouts
+        repeat with winRecord in windowPositions
+            set appName to processName of winRecord
+            set theUrl to savedUrl of winRecord
+            set targetPos to wPos of winRecord
+            set targetSize to wSize of winRecord
+            
+            try
+                -- SAFARI SPECIFIC FIX
+                if appName is "Safari" then
+                    tell application "Safari"
+                        activate
+                        if not (exists document 1) then make new document
+                        if theUrl is not "" then set URL of document 1 to theUrl
+                    end tell
+                
+                -- CHROME SPECIFIC FIX
+                else if appName is "Google Chrome" then
+                    tell application "Google Chrome"
+                        activate
+                        if not (exists window 1) then make new window
+                        if theUrl is not "" then set URL of active tab of window 1 to theUrl
+                    end tell
+                    
+                else
+                    -- STANDARD APPS
+                    tell application appName to activate
+                end if
+                
+                -- FORCE MOVE (Try repeatedly if app is slow)
+                repeat 3 times
+                    try
+                        tell application "System Events" to tell process appName
+                            set targetIndex to winIndex of winRecord
+                            if (count of windows) >= targetIndex then
+                                set position of window targetIndex to targetPos
+                                set size of window targetIndex to targetSize
+                                exit repeat -- Success!
+                            end if
+                        end tell
+                    end try
+                    delay 0.5 -- Wait half a second and try moving again
+                end repeat
+                
+            end try
+        end repeat
+    end try
+    """#
+    _ = runAppleScript(script)
+}
+
+// --- UI SETUP ---
+
+let app = NSApplication.shared
+app.setActivationPolicy(.regular)
+
+let alert = NSAlert()
+alert.messageText = appTitle
+alert.informativeText = "Manage your window layouts."
+alert.addButton(withTitle: "Restore")
+alert.addButton(withTitle: "Save New...")
+alert.addButton(withTitle: "Cancel")
+
+let viewWidth: CGFloat = 450
+let viewHeight: CGFloat = 300
+let container = NSView(frame: NSRect(x: 0, y: 0, width: viewWidth, height: viewHeight))
+
+let dropdown = NSPopUpButton(frame: NSRect(x: 0, y: 260, width: 340, height: 25))
+let deleteBtn = NSButton(frame: NSRect(x: 350, y: 260, width: 90, height: 25))
+deleteBtn.title = "Delete"
+deleteBtn.bezelStyle = .rounded
+
+let imgView = NSImageView(frame: NSRect(x: 0, y: 0, width: viewWidth, height: 250))
+imgView.imageScaling = .scaleProportionallyUpOrDown
+imgView.imageFrameStyle = .grayBezel
+
+// --- UI HANDLERS ---
+
+func refreshList() {
+    let profiles = getSavedProfiles()
+    dropdown.removeAllItems()
+    dropdown.addItems(withTitles: profiles)
+    if profiles.isEmpty { 
+        dropdown.addItem(withTitle: "No Profiles Found")
+        deleteBtn.isEnabled = false
+    } else {
+        deleteBtn.isEnabled = true
+    }
+    updateImage()
+}
+
+func updateImage() {
+    guard let selected = dropdown.titleOfSelectedItem else { return }
+    let imgPath = storageFolder.appendingPathComponent("\(selected).png")
+    if fileManager.fileExists(atPath: imgPath.path) {
+        imgView.image = NSImage(contentsOf: imgPath)
+    } else {
+        imgView.image = nil
+    }
+}
+
+class UIHandler: NSObject {
+    @objc func dropdownChanged(_ sender: Any) { updateImage() }
+    
+    @objc func deleteClicked(_ sender: Any) {
+        guard let name = dropdown.titleOfSelectedItem, name != "No Profiles Found" else { return }
+        let confirm = NSAlert()
+        confirm.messageText = "Delete '\(name)'?"
+        confirm.informativeText = "This cannot be undone."
+        confirm.addButton(withTitle: "Delete")
+        confirm.addButton(withTitle: "Cancel")
+        if confirm.runModal() == .alertFirstButtonReturn {
+            deleteProfile(name: name)
+            refreshList()
+        }
+    }
+}
+
+let handler = UIHandler()
+dropdown.target = handler
+dropdown.action = #selector(UIHandler.dropdownChanged(_:))
+deleteBtn.target = handler
+deleteBtn.action = #selector(UIHandler.deleteClicked(_:))
+
+refreshList()
+
+container.addSubview(dropdown)
+container.addSubview(deleteBtn)
+container.addSubview(imgView)
+alert.accessoryView = container
+
+app.activate(ignoringOtherApps: true)
+let response = alert.runModal()
+
+if response == .alertFirstButtonReturn { 
+    if let name = dropdown.titleOfSelectedItem, name != "No Profiles Found" {
+        restoreProfile(name: name)
+    }
+} 
+else if response == .alertSecondButtonReturn { 
+    while true {
+        let nameAlert = NSAlert()
+        nameAlert.messageText = "Name your profile"
+        nameAlert.addButton(withTitle: "Save")
+        nameAlert.addButton(withTitle: "Cancel")
+        let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
+        nameAlert.accessoryView = input
+        
+        if nameAlert.runModal() == .alertFirstButtonReturn {
+            let newName = input.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            if newName.isEmpty { continue }
+            
+            // DUPLICATE CHECK (Fix: Case Insensitive)
+            let existing = getSavedProfiles().map { $0.lowercased() }
+            if existing.contains(newName.lowercased()) {
+                let dupAlert = NSAlert()
+                dupAlert.messageText = "Name already exists"
+                dupAlert.informativeText = "This name matches an existing profile."
+                dupAlert.runModal()
+                continue
+            }
+            saveProfile(name: newName)
+            break
+        } else { break }
+    }
+}
+EOF
+
+# 3. Compile updated app
+swiftc WindowSaverUltimate.swift -o WindowSaver
