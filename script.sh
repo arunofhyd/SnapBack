@@ -1,11 +1,103 @@
-cd ~/Desktop
+#!/bin/bash
 
-echo "1. Deleting old files..."
-rm -f WindowSaverUltimate.swift
-rm -f WindowSaver.swift
+# Ensure we are in the directory where we want to build
+cd ~/Desktop || exit 1
+
+echo "1. Cleaning up old files..."
 rm -f SnapBack.swift
+rm -f GenIcon.swift
+rm -f AppIcon.png
+rm -rf AppIcon.iconset
+rm -rf "Snap Back.tmp.app"
+rm -rf "Snap Back.app"
 
-echo "2. Writing new code (Snap Back)..."
+echo "2. Creating Temporary App Bundle Structure..."
+mkdir -p "Snap Back.tmp.app/Contents/MacOS"
+mkdir -p "Snap Back.tmp.app/Contents/Resources"
+# Ensure folders are executable
+chmod 755 "Snap Back.tmp.app/Contents/MacOS"
+chmod 755 "Snap Back.tmp.app/Contents/Resources"
+
+echo "3. Creating App Icon..."
+cat > GenIcon.swift <<'EOF'
+import Cocoa
+let size = CGSize(width: 1024, height: 1024)
+let image = NSImage(size: size)
+image.lockFocus()
+let context = NSGraphicsContext.current!.cgContext
+let path = NSBezierPath(roundedRect: NSRect(origin: .zero, size: size), xRadius: 224, yRadius: 224)
+NSColor(red: 0.15, green: 0.15, blue: 0.17, alpha: 1.0).setFill()
+path.fill()
+context.setShadow(offset: CGSize(width: 0, height: -10), blur: 20)
+let strokePath = NSBezierPath()
+strokePath.lineWidth = 80
+strokePath.lineCapStyle = .round
+strokePath.lineJoinStyle = .round
+let padding: CGFloat = 150
+let legLength: CGFloat = 180
+func drawCorner(start: CGPoint, corner: CGPoint, end: CGPoint) {
+    strokePath.move(to: start); strokePath.line(to: corner); strokePath.line(to: end)
+}
+drawCorner(start: CGPoint(x: padding, y: 1024 - padding - legLength), corner: CGPoint(x: padding, y: 1024 - padding), end: CGPoint(x: padding + legLength, y: 1024 - padding))
+drawCorner(start: CGPoint(x: 1024 - padding - legLength, y: 1024 - padding), corner: CGPoint(x: 1024 - padding, y: 1024 - padding), end: CGPoint(x: 1024 - padding, y: 1024 - padding - legLength))
+drawCorner(start: CGPoint(x: padding, y: padding + legLength), corner: CGPoint(x: padding, y: padding), end: CGPoint(x: padding + legLength, y: padding))
+drawCorner(start: CGPoint(x: 1024 - padding - legLength, y: padding), corner: CGPoint(x: 1024 - padding, y: padding), end: CGPoint(x: 1024 - padding, y: padding + legLength))
+NSColor(white: 1.0, alpha: 1.0).setStroke()
+strokePath.stroke()
+image.unlockFocus()
+if let tiff = image.tiffRepresentation, let bitmap = NSBitmapImageRep(data: tiff), let png = bitmap.representation(using: .png, properties: [:]) {
+    try? png.write(to: URL(fileURLWithPath: "AppIcon.png"))
+}
+EOF
+swiftc GenIcon.swift -o GenIcon
+./GenIcon
+mkdir AppIcon.iconset
+sips -z 16 16     AppIcon.png --out AppIcon.iconset/icon_16x16.png > /dev/null
+sips -z 32 32     AppIcon.png --out AppIcon.iconset/icon_16x16@2x.png > /dev/null
+sips -z 32 32     AppIcon.png --out AppIcon.iconset/icon_32x32.png > /dev/null
+sips -z 64 64     AppIcon.png --out AppIcon.iconset/icon_32x32@2x.png > /dev/null
+sips -z 128 128   AppIcon.png --out AppIcon.iconset/icon_128x128.png > /dev/null
+sips -z 256 256   AppIcon.png --out AppIcon.iconset/icon_128x128@2x.png > /dev/null
+sips -z 256 256   AppIcon.png --out AppIcon.iconset/icon_256x256.png > /dev/null
+sips -z 512 512   AppIcon.png --out AppIcon.iconset/icon_256x256@2x.png > /dev/null
+sips -z 512 512   AppIcon.png --out AppIcon.iconset/icon_512x512.png > /dev/null
+sips -z 1024 1024 AppIcon.png --out AppIcon.iconset/icon_512x512@2x.png > /dev/null
+iconutil -c icns AppIcon.iconset
+mv AppIcon.icns "Snap Back.tmp.app/Contents/Resources/"
+rm GenIcon.swift GenIcon AppIcon.png
+rm -rf AppIcon.iconset
+
+echo "4. Creating Info.plist..."
+cat > "Snap Back.tmp.app/Contents/Info.plist" <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>SnapBack</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.snapback.app</string>
+    <key>CFBundleName</key>
+    <string>Snap Back</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>10.15</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Snap Back needs to control other applications to save and restore window layouts.</string>
+</dict>
+</plist>
+EOF
+
+echo "5. Writing Swift Source..."
 cat > SnapBack.swift <<'EOF'
 import Cocoa
 
@@ -14,11 +106,9 @@ let appTitle = "Snap Back"
 let fileManager = FileManager.default
 let home = fileManager.homeDirectoryForCurrentUser
 let storageFolder = home.appendingPathComponent("Pictures/Snap Back Profiles")
-
 try? fileManager.createDirectory(at: storageFolder, withIntermediateDirectories: true)
 
 // --- HELPERS ---
-
 func runShell(_ command: String) -> Int32 {
     let task = Process()
     task.launchPath = "/bin/zsh"
@@ -28,24 +118,12 @@ func runShell(_ command: String) -> Int32 {
     return task.terminationStatus
 }
 
-// Run detached shell command (does not wait)
-func runShellDetached(_ command: String) {
-    let task = Process()
-    task.launchPath = "/bin/zsh"
-    task.arguments = ["-c", "nohup sh -c '\(command)' >/dev/null 2>&1 &"]
-    task.launch()
-}
-
 func runAppleScript(_ source: String) -> (Bool, String?) {
     if let script = NSAppleScript(source: source) {
         var error: NSDictionary?
         let result = script.executeAndReturnError(&error)
         if let err = error {
             let msg = err["NSAppleScriptErrorMessage"] as? String ?? "Unknown AppleScript error"
-            // Don't print if it's just the minimize/close script failing (e.g. not running in Terminal)
-            if !source.contains("tell application \"Terminal\"") {
-                print("Script Error: \(msg)")
-            }
             return (false, msg)
         }
         return (true, result.stringValue)
@@ -75,28 +153,17 @@ func showError(message: String) {
 func showScriptError(details: String?) {
     let alert = NSAlert()
     alert.messageText = "Operation Failed"
-    
     var info = "Snap Back encountered an error."
-    if let d = details {
-        info += "\n\nError: \(d)"
-    }
-    
-    // Check for common permission error keywords
-    let isPermissionIssue = details?.lowercased().contains("not allowed") ?? true
-    
+    if let d = details { info += "\n\nError: \(d)" }
+    let err = details?.lowercased() ?? ""
+    let isPermissionIssue = err.contains("not allowed") || err.contains("not authorized") || err.contains("(-1743)")
     if isPermissionIssue {
-        info += "\n\nThis is likely due to missing Accessibility permissions. Please check System Settings."
-        alert.addButton(withTitle: "Open Settings")
-        alert.addButton(withTitle: "Cancel")
-    } else {
-        alert.addButton(withTitle: "OK")
-    }
-    
+        info += "\n\nPlease check System Settings > Privacy & Security > Automation."
+        alert.addButton(withTitle: "Open Settings"); alert.addButton(withTitle: "Cancel")
+    } else { alert.addButton(withTitle: "OK") }
     alert.informativeText = info
-    
-    let response = alert.runModal()
-    if isPermissionIssue && response == .alertFirstButtonReturn {
-        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+    if alert.runModal() == .alertFirstButtonReturn && isPermissionIssue {
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")!
         NSWorkspace.shared.open(url)
     }
 }
@@ -105,92 +172,76 @@ func showHelp() {
     let alert = NSAlert()
     alert.messageText = "Snap Back Setup Guide"
     
-    // Create custom view for Help text only
-    let helpViewWidth: CGFloat = 400
-    let helpViewHeight: CGFloat = 200
+    let helpViewWidth: CGFloat = 450
+    let helpViewHeight: CGFloat = 220
     let helpContainer = NSView(frame: NSRect(x: 0, y: 0, width: helpViewWidth, height: helpViewHeight))
-    
-    // Instructions Text
     let textView = NSTextField(frame: NSRect(x: 0, y: 0, width: helpViewWidth, height: helpViewHeight))
     textView.isEditable = false
     textView.isBordered = false
     textView.drawsBackground = false
+    
     textView.stringValue = """
-    Snap Back needs permission to control windows and take screenshots.
-    
-    Usually, macOS will prompt you to "Allow" these automatically when you first run the app.
-    
-    If the app isn't working, please ensure 'Snap Back' is enabled in:
-    
-    1. System Settings > Privacy & Security > Accessibility
-       (Click '+' to add Snap Back if missing)
-       
-    2. System Settings > Privacy & Security > Screen Recording
-       (Toggle 'Snap Back' ON)
-       
-    If issues persist, remove and re-add the app in settings.
+    You must grant the following permissions in System Settings:
+
+    1. Accessibility
+    - Required to move and resize windows.
+    - Go to Privacy & Security > Accessibility.
+    - Click '+' (or allow in list) to add 'Snap Back'.
+
+    2. Screen Recording
+    - Required to save screenshot previews.
+    - Go to Privacy & Security > Screen Recording.
+    - Click '+' (or allow in list) to add 'Snap Back'.
+
+    If the app fails to save or restore, try removing it from these lists and adding it again.
     """
-    helpContainer.addSubview(textView)
     
+    helpContainer.addSubview(textView)
     alert.accessoryView = helpContainer
     
-    alert.addButton(withTitle: "Open Privacy Settings")
     alert.addButton(withTitle: "OK")
+    alert.addButton(withTitle: "Open Privacy Settings")
     
-    if alert.runModal() == .alertFirstButtonReturn {
-        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
-        NSWorkspace.shared.open(url)
+    let response = alert.runModal()
+    
+    if response == .alertSecondButtonReturn {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
     }
 }
 
 func deleteProfile(name: String) -> Bool {
     let scriptFile = storageFolder.appendingPathComponent("\(name).scpt")
-    let imgFile = storageFolder.appendingPathComponent("\(name).png")
-    
+    let jpgFile = storageFolder.appendingPathComponent("\(name).jpg")
+    let pngFile = storageFolder.appendingPathComponent("\(name).png")
     do {
-        if fileManager.fileExists(atPath: scriptFile.path) {
-            try fileManager.removeItem(at: scriptFile)
-        }
-        if fileManager.fileExists(atPath: imgFile.path) {
-            try fileManager.removeItem(at: imgFile)
-        }
+        if fileManager.fileExists(atPath: scriptFile.path) { try fileManager.removeItem(at: scriptFile) }
+        if fileManager.fileExists(atPath: jpgFile.path) { try fileManager.removeItem(at: jpgFile) }
+        if fileManager.fileExists(atPath: pngFile.path) { try fileManager.removeItem(at: pngFile) }
         return true
-    } catch {
-        showError(message: "Failed to delete profile: \(error.localizedDescription)")
-        return false
-    }
+    } catch { return false }
 }
 
 // --- CORE LOGIC ---
-
 func saveProfile(name: String) -> Bool {
     let dataFile = storageFolder.appendingPathComponent("\(name).scpt")
-    let imgFile = storageFolder.appendingPathComponent("\(name).png")
+    let imgFile = storageFolder.appendingPathComponent("\(name).jpg") 
     
-    // 1. Take Screenshot FIRST
-    let status = runShell("screencapture -x \"\(imgFile.path)\"")
-    if status != 0 {
-        showError(message: "Failed to take screenshot. Check Screen Recording permissions.")
-        return false
-    }
+    let status = runShell("screencapture -x -t jpg \"\(imgFile.path)\"")
+    if status != 0 { showError(message: "Screenshot failed. Check permissions."); return false }
 
-    // 2. Save Window Data
     let script = #"""
     script DataCarrier
         property mainData : {}
     end script
-    
     set thePath to "\#(dataFile.path)"
-    
     tell application "System Events"
         set processList to (every process where background only is false)
         repeat with proc in processList
             try
                 set appName to name of proc
-                
-                -- FILTER: Ignore background helpers
-                if appName is not "app_mode_loader" and appName is not "ControlCenter" and appName is not "Snap Back" then
-                    
+                if appName is not "Snap Back" and appName is not "app_mode_loader" and appName is not "ControlCenter" then
                     tell proc
                         set allWindows to every window
                         repeat with i from 1 to count of allWindows
@@ -198,85 +249,67 @@ func saveProfile(name: String) -> Bool {
                             set wPos to position of thisWindow
                             set wSize to size of thisWindow
                             set wUrl to ""
-                            
                             if appName is "Safari" and i is 1 then
                                 tell application "Safari" to set wUrl to URL of document 1
                             else if appName is "Google Chrome" and i is 1 then
                                 tell application "Google Chrome" to set wUrl to URL of active tab of window 1
                             end if
-                            
                             set end of mainData of DataCarrier to {processName:appName, winIndex:i, wPos:wPos, wSize:wSize, savedUrl:wUrl}
                         end repeat
                     end tell
-                    
                 end if
             end try
         end repeat
     end tell
-    
     set theFile to POSIX file thePath
     store script DataCarrier in theFile replacing yes
     """#
-    
     let (success, errorMsg) = runAppleScript(script)
-    if success {
-        return true
-    } else {
-        showScriptError(details: errorMsg)
-        return false
-    }
+    if success { return true }
+    else { showScriptError(details: errorMsg); return false }
 }
 
 func restoreProfile(name: String) {
     let dataFile = storageFolder.appendingPathComponent("\(name).scpt")
-    
+    // FIX: Removed semicolon one-liners to fix "Unknown Token" error
     let script = #"""
     set theFile to POSIX file "\#(dataFile.path)"
     try
         set loadedScript to load script theFile
         set windowPositions to mainData of loadedScript
         
-        -- PHASE 1: Launch all apps first
+        -- Phase 1: Launch
         repeat with winRecord in windowPositions
             set appName to processName of winRecord
             try
                 tell application appName to activate
             end try
         end repeat
-        
-        -- PHASE 2: Wait loop (Give apps 2 seconds to actually open)
         delay 2
         
-        -- PHASE 3: Apply Layouts
+        -- Phase 2: Restore
         repeat with winRecord in windowPositions
             set appName to processName of winRecord
             set theUrl to savedUrl of winRecord
             set targetPos to wPos of winRecord
             set targetSize to wSize of winRecord
-            
             try
-                -- SAFARI SPECIFIC FIX
                 if appName is "Safari" then
                     tell application "Safari"
                         activate
                         if not (exists document 1) then make new document
                         if theUrl is not "" then set URL of document 1 to theUrl
                     end tell
-                
-                -- CHROME SPECIFIC FIX
                 else if appName is "Google Chrome" then
                     tell application "Google Chrome"
                         activate
                         if not (exists window 1) then make new window
                         if theUrl is not "" then set URL of active tab of window 1 to theUrl
                     end tell
-                    
                 else
-                    -- STANDARD APPS
                     tell application appName to activate
                 end if
                 
-                -- FORCE MOVE (Try repeatedly if app is slow)
                 repeat 3 times
                     try
                         tell application "System Events" to tell process appName
@@ -284,26 +317,21 @@ func restoreProfile(name: String) {
                             if (count of windows) >= targetIndex then
                                 set position of window targetIndex to targetPos
                                 set size of window targetIndex to targetSize
-                                exit repeat -- Success!
+                                exit repeat
                             end if
                         end tell
                     end try
-                    delay 0.5 -- Wait half a second and try moving again
+                    delay 0.5
                 end repeat
-                
             end try
         end repeat
     end try
     """#
-    
     let (success, errorMsg) = runAppleScript(script)
-    if success == false {
-        showScriptError(details: errorMsg)
-    }
+    if !success { showScriptError(details: errorMsg) }
 }
 
 // --- UI SETUP ---
-
 let app = NSApplication.shared
 app.setActivationPolicy(.regular)
 
@@ -321,162 +349,134 @@ let container = NSView(frame: NSRect(x: 0, y: 0, width: viewWidth, height: viewH
 
 let dropdown = NSPopUpButton(frame: NSRect(x: 0, y: 260, width: 340, height: 25))
 let deleteBtn = NSButton(frame: NSRect(x: 350, y: 260, width: 90, height: 25))
-deleteBtn.title = "Delete"
-deleteBtn.bezelStyle = .rounded
+deleteBtn.title = "Delete"; deleteBtn.bezelStyle = .rounded
 
-let imgView = NSImageView(frame: NSRect(x: 0, y: 0, width: viewWidth, height: 250))
-imgView.imageScaling = .scaleProportionallyUpOrDown
-imgView.imageFrameStyle = .grayBezel
+// --- FRAME LOGIC ---
+let maxW: CGFloat = 450
+let maxH: CGFloat = 250
+let imgContainer = NSView(frame: NSRect(x: 0, y: 0, width: maxW, height: maxH)) 
+imgContainer.wantsLayer = true
+imgContainer.layer?.borderWidth = 1.0
+imgContainer.layer?.borderColor = NSColor.clear.cgColor 
+imgContainer.layer?.cornerRadius = 6.0
 
-// --- UI HANDLERS ---
+let gap: CGFloat = 4
+let imgView = NSImageView(frame: NSRect(x: gap, y: gap, width: maxW - (gap*2), height: maxH - (gap*2)))
+imgView.imageScaling = .scaleAxesIndependently 
+imgView.imageFrameStyle = .none
+imgView.wantsLayer = true
+imgView.layer?.cornerRadius = 4.0
+imgView.layer?.masksToBounds = true
+imgContainer.addSubview(imgView)
 
+// --- HANDLERS ---
 func refreshList() {
     let profiles = getSavedProfiles()
     dropdown.removeAllItems()
     dropdown.addItems(withTitles: profiles)
-    if profiles.isEmpty { 
-        dropdown.addItem(withTitle: "No Profiles Found")
-        deleteBtn.isEnabled = false
-    } else {
-        deleteBtn.isEnabled = true
-    }
+    if profiles.isEmpty { dropdown.addItem(withTitle: "No Profiles Found"); deleteBtn.isEnabled = false }
+    else { deleteBtn.isEnabled = true }
     updateImage()
 }
 
 func updateImage() {
     guard let selected = dropdown.titleOfSelectedItem else { 
         imgView.image = nil
+        imgContainer.layer?.borderColor = NSColor.clear.cgColor 
         return 
     }
-    let imgPath = storageFolder.appendingPathComponent("\(selected).png")
-    if fileManager.fileExists(atPath: imgPath.path) {
-        // Force reload by creating new NSImage from file
-        imgView.image = NSImage(contentsOf: imgPath)
-    } else {
+    
+    let imgPath = storageFolder.appendingPathComponent("\(selected).jpg")
+    if fileManager.fileExists(atPath: imgPath.path), let img = NSImage(contentsOf: imgPath) {
+        imgView.image = img
+        imgContainer.layer?.borderColor = NSColor.tertiaryLabelColor.cgColor
+        
+        let imgSize = img.size
+        let ratio = imgSize.width / imgSize.height
+        
+        var targetW = maxW
+        var targetH = maxW / ratio
+        
+        if targetH > maxH {
+            targetH = maxH
+            targetW = maxH * ratio
+        }
+        
+        imgContainer.frame = NSRect(x: (viewWidth - targetW) / 2, y: (maxH - targetH) / 2, width: targetW, height: targetH)
+        imgView.frame = NSRect(x: gap, y: gap, width: targetW - (gap*2), height: targetH - (gap*2))
+        
+    } else { 
         imgView.image = nil
+        imgContainer.layer?.borderColor = NSColor.clear.cgColor 
     }
 }
 
 class UIHandler: NSObject {
     @objc func dropdownChanged(_ sender: Any) { updateImage() }
-    
     @objc func deleteClicked(_ sender: Any) {
         guard let name = dropdown.titleOfSelectedItem, name != "No Profiles Found" else { return }
         let confirm = NSAlert()
-        confirm.messageText = "Delete '\(name)'?"
-        confirm.informativeText = "This cannot be undone."
-        confirm.addButton(withTitle: "Delete")
-        confirm.addButton(withTitle: "Cancel")
-        if confirm.runModal() == .alertFirstButtonReturn {
-            if deleteProfile(name: name) {
-                refreshList()
-            }
-        }
+        confirm.messageText = "Delete '\(name)'?"; confirm.addButton(withTitle: "Delete"); confirm.addButton(withTitle: "Cancel")
+        if confirm.runModal() == .alertFirstButtonReturn { if deleteProfile(name: name) { refreshList() } }
     }
 }
-
 let handler = UIHandler()
-dropdown.target = handler
-dropdown.action = #selector(UIHandler.dropdownChanged(_:))
-deleteBtn.target = handler
-deleteBtn.action = #selector(UIHandler.deleteClicked(_:))
+dropdown.target = handler; dropdown.action = #selector(UIHandler.dropdownChanged(_:))
+deleteBtn.target = handler; deleteBtn.action = #selector(UIHandler.deleteClicked(_:))
 
 refreshList()
 
 container.addSubview(dropdown)
 container.addSubview(deleteBtn)
-container.addSubview(imgView)
+container.addSubview(imgContainer)
+
 alert.accessoryView = container
 
-// --- MAIN EXECUTION ---
-
+app.finishLaunching()
 app.activate(ignoringOtherApps: true)
 
-// TERMINAL MANAGEMENT: Capture ID and Minimize
-var terminalWindowID: String? = nil
-let getIDScript = "tell application \"Terminal\" to get id of front window"
-let (gotID, idResult) = runAppleScript(getIDScript)
-
-if gotID, let idStr = idResult {
-    terminalWindowID = idStr
-    // Force minimize immediately
-    let minimizeScript = "tell application \"Terminal\" to set minimized of window id \(idStr) to true"
-    _ = runAppleScript(minimizeScript)
-}
-
-// Main Event Loop Logic
+// --- LOOP ---
 while true {
     let response = alert.runModal()
-    
     if response == .alertFirstButtonReturn { // Restore
-        if let name = dropdown.titleOfSelectedItem, name != "No Profiles Found" {
-            restoreProfile(name: name)
-        }
-        break // Exit
-    } 
-    else if response == .alertSecondButtonReturn { // Save New...
+        if let name = dropdown.titleOfSelectedItem, name != "No Profiles Found" { restoreProfile(name: name) }
+        break
+    } else if response == .alertSecondButtonReturn { // Save
         while true {
             let nameAlert = NSAlert()
-            nameAlert.messageText = "Name your profile"
-            nameAlert.addButton(withTitle: "Save")
-            nameAlert.addButton(withTitle: "Cancel")
+            nameAlert.messageText = "Name Profile"; nameAlert.addButton(withTitle: "Save"); nameAlert.addButton(withTitle: "Cancel")
             let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
             nameAlert.accessoryView = input
-            
             if nameAlert.runModal() == .alertFirstButtonReturn {
                 let newName = input.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
                 if newName.isEmpty { continue }
-                
-                // SANITIZATION
-                let invalidCharacters = CharacterSet(charactersIn: "\\/:*?\"<>|")
-                if newName.rangeOfCharacter(from: invalidCharacters) != nil {
-                    let invalidAlert = NSAlert()
-                    invalidAlert.messageText = "Invalid Name"
-                    invalidAlert.informativeText = "Name cannot contain special characters like quotes or slashes."
-                    invalidAlert.runModal()
-                    continue
-                }
-                
-                // DUPLICATE CHECK
                 let existing = getSavedProfiles().map { $0.lowercased() }
                 if existing.contains(newName.lowercased()) {
-                    let dupAlert = NSAlert()
-                    dupAlert.messageText = "Name already exists"
-                    dupAlert.informativeText = "This name matches an existing profile."
-                    dupAlert.runModal()
-                    continue
+                    let dup = NSAlert(); dup.messageText = "Name Exists"; dup.runModal(); continue
                 }
-                
-                if saveProfile(name: newName) {
-                    showSuccess(message: "Profile saved successfully!")
-                    break // Break inner loop (name prompt)
-                } else {
-                    break // Break inner loop (failed save)
-                }
-            } else { 
-                break // Cancelled name prompt
-            }
+                if saveProfile(name: newName) { showSuccess(message: "Saved!"); break }
+                else { break }
+            } else { break }
         }
-        break // Exit app after save flow
-    } 
-    else if response == .alertThirdButtonReturn { // Cancel
-        // Close Terminal Forcefully (saving no) to avoid "Terminate?" prompt
-        // We do this by launching a detached background process to close the window
-        // AFTER this app exits.
-        if let tid = terminalWindowID {
-            let closeScript = "sleep 0.2; osascript -e 'tell application \"Terminal\" to close window id \(tid) saving no'"
-            runShellDetached(closeScript)
-        }
-        exit(0) // Exit immediately so the window has no running process
-    }
-    else { // Help Button
-        showHelp()
-        // Loop continues
-    }
+        break
+    } else if response == .alertThirdButtonReturn { exit(0) } // Cancel
+    else { showHelp() }
 }
 EOF
 
-echo "3. Compiling updated app..."
-swiftc SnapBack.swift -o "Snap Back"
+echo "6. Compiling Snap Back..."
+swiftc SnapBack.swift -o "Snap Back.tmp.app/Contents/MacOS/SnapBack"
 
-echo "Done. You can now run the app by double-clicking 'Snap Back' on your Desktop."
+if [ $? -eq 0 ]; then
+    echo "Compilation successful!"
+    rm SnapBack.swift
+    chmod +x "Snap Back.tmp.app/Contents/MacOS/SnapBack"
+    rm -rf "Snap Back.app"
+    mv "Snap Back.tmp.app" "Snap Back.app"
+    touch "Snap Back.app"
+    echo "Done. 'Snap Back.app' is ready on your Desktop."
+else
+    echo "Compilation failed."
+    rm -rf "Snap Back.tmp.app"
+    exit 1
+fi
