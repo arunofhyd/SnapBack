@@ -96,6 +96,14 @@ if ! xcode-select -p &>/dev/null; then
     printf "   Please complete the installer prompt.\n"
     printf "   Press [ENTER] when installation is confirmed..."
     read -r
+
+    if ! xcode-select -p &>/dev/null; then
+        show_failure_art
+        printf "\n"
+        printf "   ${ALERT_RED}Installation not confirmed. Xcode Command Line Tools are required.${NC}\n"
+        printf "   ${TXT_GREY}Please rerun the script and complete the installation.${NC}\n"
+        exit 1
+    fi
 else
     printf "   ${NEON_GREEN}✔ Xcode Command Line Tools detected.${NC}\n"
 fi
