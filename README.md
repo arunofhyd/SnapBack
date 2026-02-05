@@ -3,7 +3,7 @@
   <h1>Snap Back</h1>
   <p><strong>Window Layout Manager for macOS</strong></p>
   <p align="center">
-  MADE FOR <img src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/apple.svg" width="16" height="16"               valign="middle"> <strong>macOS</strong>
+  Made for<img src="https://img.shields.io/badge/-white?style=flat&logo=apple&logoColor=white&color=white" width="13" height="13" valign="middle" style="display:inline"> <strong>macOS</strong>
   </p>
 
   <p>
