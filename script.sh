@@ -155,7 +155,8 @@ drawCorner(start: CGPoint(x: padding, y: padding + legLength), corner: CGPoint(x
 // Bottom Right
 drawCorner(start: CGPoint(x: 1024 - padding - legLength, y: padding), corner: CGPoint(x: 1024 - padding, y: padding), end: CGPoint(x: 1024 - padding, y: padding + legLength))
 
-NSColor.white.setStroke()
+let cyan = NSColor(red: 0.0, green: 1.0, blue: 1.0, alpha: 1.0)
+cyan.setStroke()
 strokePath.stroke()
 
 // 3. Central Arrow (Reduced Size & Centered)
@@ -196,7 +197,7 @@ transform.rotate(byDegrees: tangent)
 transform.translate(x: 55, y: 0)
 
 headPath.transform(using: transform)
-NSColor.white.setFill()
+cyan.setFill()
 headPath.fill()
 
 image.unlockFocus()
@@ -980,6 +981,8 @@ if [ $? -eq 0 ]; then
     printf "   ${NEON_PURPLE}SUGGESTION:${NC} Drag to Applications and assign launch shortcut.\n"
     printf "   ${TXT_GREY}EXECUTION TIME: $(date +%T)${NC}\n"
     printf "\n"
+    # Audio Feedback
+    afplay /System/Library/Sounds/Glass.aiff 2>/dev/null || tput bel
 else
     show_failure_art
     printf "\n"
