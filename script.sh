@@ -430,20 +430,20 @@ func showHelp() {
     // --- AUTHOR & LINK SECTION ---
     content.append(NSAttributedString(string: "      by Arun Thomas\n", attributes: [
         .font: NSFont.systemFont(ofSize: 13, weight: .medium),
-        .foregroundColor: NSColor.secondaryLabelColor,
+        .foregroundColor: NSColor.labelColor,
         .paragraphStyle: centerStyle
     ]))
     
     content.append(NSAttributedString(string: "For updates visit : ", attributes: [
         .font: NSFont.systemFont(ofSize: 11),
-        .foregroundColor: NSColor.secondaryLabelColor,
+        .foregroundColor: NSColor.labelColor,
         .paragraphStyle: linkStyle
     ]))
 
-    content.append(NSAttributedString(string: "snapbackapp.vercel.com\n\n", attributes: [
+    content.append(NSAttributedString(string: "snapbackapp.vercel.app\n\n", attributes: [
         .font: NSFont.systemFont(ofSize: 11),
         .foregroundColor: NSColor.linkColor,
-        .link: URL(string: "https://snapbackapp.vercel.com")!,
+        .link: URL(string: "https://snapbackapp.vercel.app")!,
         .paragraphStyle: linkStyle
     ]))
     // ----------------------------
