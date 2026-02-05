@@ -472,7 +472,7 @@ addHeader("Required Permissions", icon: "🔐")
     addHeader("Troubleshooting", icon: "🛠")
     addBody("If a window fails to move, remove Snap Back from Privacy & Security settings and re-add it to reset permissions.")
     addHeader("Capture State", icon: "📸")
-    addBody("Click 'Save New...' to instantly record the geometry & state of all open windows/apps and browser tabs (Safari, Chrome, Arc, etc).")
+    addBody("Click 'Save New...' to instantly record the geometry & state of any open app window and browser tab. This tool is designed for Power Users.")
     
     addHeader("Restore Layout", icon: "⚡️")
     addBody("Select a profile and click 'Restore'. Windows snap to their grid coordinates; URLs reload automatically.")
@@ -787,7 +787,7 @@ let app = NSApplication.shared
 app.setActivationPolicy(.regular)
 
 let alert = NSAlert()
-alert.messageText = appTitle
+alert.messageText = "\(appTitle) v1.0"
 alert.informativeText = "Instantly save and restore your workspace, Never lose your layout again."
 alert.addButton(withTitle: "Restore")
 alert.addButton(withTitle: "Save New...")
@@ -983,6 +983,9 @@ if [ $? -eq 0 ]; then
     printf "\n"
     # Audio Feedback
     afplay /System/Library/Sounds/Glass.aiff 2>/dev/null || tput bel
+    
+    # Trigger System Notification
+    osascript -e 'display notification "Snap Back has been successfully installed to your Desktop." with title "Installation Complete"' &>/dev/null
 else
     show_failure_art
     printf "\n"
