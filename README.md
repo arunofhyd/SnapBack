@@ -2,7 +2,7 @@
   <img src="logo.svg" alt="Snap Back Logo" width="120" height="120">
   <h1>Snap Back</h1>
   <p><strong>Window Layout Manager for macOS</strong></p>
-  <p><em>Made for macOS</em></p>
+  <p><em>Made for  macOS</em></p>
 
   <p>
     <img src="https://img.shields.io/badge/Built%20With-Swift-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift">
