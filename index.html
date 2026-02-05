@@ -73,6 +73,19 @@
                 }
             }
         }
+
+        function copyEmail(btn) {
+            navigator.clipboard.writeText('arunthomas04042001@gmail.com').then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = 'Email Copied!';
+                btn.classList.add('text-neon-cyan');
+
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.remove('text-neon-cyan');
+                }, 2000);
+            });
+        }
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
@@ -300,7 +313,7 @@
             Built by <span class="text-white">Arun Thomas</span>
         </div>
         <div class="text-gray-500 text-xs mb-4">
-            <a href="mailto:arunthomas04042001@gmail.com" class="hover:text-neon-cyan transition-colors">Contact Developer</a>
+            <button onclick="copyEmail(this)" class="hover:text-neon-cyan transition-colors bg-transparent border-none cursor-pointer">arunthomas04042001@gmail.com</button>
         </div>
         <div class="text-xs text-gray-700">
             &copy; 2026 Snap Back. All rights reserved.
