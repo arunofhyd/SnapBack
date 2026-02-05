@@ -99,6 +99,20 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+
+        .typing-cursor::after {
+            content: '|';
+            display: inline-block;
+            margin-left: 2px;
+            animation: blink 1s step-end infinite;
+            color: #00ffff;
+            -webkit-text-fill-color: #00ffff;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
     </style>
 </head>
 <body class="antialiased selection:bg-neon-purple selection:text-white">
@@ -140,7 +154,7 @@
         </div>
         <h1 class="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
             Never Lose Your <br>
-            <span class="gradient-text">Window Layout</span> Again.
+            <span id="typing-text" class="gradient-text typing-cursor">Window Layout</span> Again.
         </h1>
         <p class="text-xl text-gray-400 mb-6 max-w-2xl mx-auto leading-relaxed">
             Instantly save the position of any app window and browser tab. Restore your entire workspace with a single click. Designed for Power Users.
@@ -320,5 +334,46 @@
         </div>
     </footer>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const textElement = document.getElementById('typing-text');
+            if (!textElement) return;
+
+            const phrases = ["Window Layout", "Workspace"];
+            let phraseIndex = 0;
+            let charIndex = 0;
+            let isDeleting = false;
+            let typeSpeed = 100;
+
+            function type() {
+                const currentPhrase = phrases[phraseIndex];
+                
+                if (isDeleting) {
+                    textElement.textContent = currentPhrase.substring(0, charIndex - 1);
+                    charIndex--;
+                    typeSpeed = 50; 
+                } else {
+                    textElement.textContent = currentPhrase.substring(0, charIndex + 1);
+                    charIndex++;
+                    typeSpeed = 100;
+                }
+
+                if (!isDeleting && charIndex === currentPhrase.length) {
+                    isDeleting = true;
+                    typeSpeed = 2000; 
+                } else if (isDeleting && charIndex === 0) {
+                    isDeleting = false;
+                    phraseIndex = (phraseIndex + 1) % phrases.length;
+                    typeSpeed = 500; 
+                }
+
+                setTimeout(type, typeSpeed);
+            }
+
+            // Clear text initially and start typing after a delay
+            textElement.textContent = '';
+            setTimeout(type, 500);
+        });
+    </script>
 </body>
 </html>
