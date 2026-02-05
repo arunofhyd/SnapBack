@@ -3,8 +3,8 @@
   <h1>Snap Back</h1>
   <p><strong>Window Layout Manager for macOS</strong></p>
   <p align="center">
-  MADE FOR <img src="https://cdn.simpleicons.org/apple/white" width="16" height="16" valign="middle"> <strong>macOS</strong>
-  </p>>
+  Made for<img src="https://cdn.simpleicons.org/apple/white" width="16" height="16" valign="middle"> <strong>macOS</strong>
+  </p>
 
   <p>
     <img src="https://img.shields.io/badge/Built%20With-Swift-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift">
