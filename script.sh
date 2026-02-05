@@ -379,9 +379,9 @@ func checkFirstRun() {
     // Show window if permissions are missing OR flag is not set (enforce permissions)
     if !axTrusted || !screenTrusted || !defaults.bool(forKey: key) {
         
-        // Custom Window for Timer Logic
-        let winWidth: CGFloat = 450
-        let winHeight: CGFloat = 320
+        // Custom Window for Timer Logic - RESIZED for better fit
+        let winWidth: CGFloat = 480
+        let winHeight: CGFloat = 400
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: winWidth, height: winHeight),
             styleMask: [.titled],
@@ -389,39 +389,41 @@ func checkFirstRun() {
             defer: false
         )
         window.center()
-        window.title = "Welcome to Snap Back"
+        window.title = "Snap Back"
         
         let contentView = NSView(frame: NSRect(x: 0, y: 0, width: winWidth, height: winHeight))
         window.contentView = contentView
         
-        // Icon
-        let iconView = NSImageView(frame: NSRect(x: 20, y: winHeight - 80, width: 64, height: 64))
+        // Icon (Top Left)
+        let iconView = NSImageView(frame: NSRect(x: 30, y: winHeight - 85, width: 64, height: 64))
         iconView.image = NSApplication.shared.applicationIconImage
         contentView.addSubview(iconView)
         
-        // Text
-        let titleLabel = NSTextField(labelWithString: "Welcome to Snap Back")
+        // Title (Right of Icon)
+        let titleLabel = NSTextField(labelWithString: "Welcome to Snap Back v1.0")
         titleLabel.font = NSFont.boldSystemFont(ofSize: 18)
-        titleLabel.frame = NSRect(x: 100, y: winHeight - 50, width: 330, height: 24)
+        titleLabel.frame = NSRect(x: 110, y: winHeight - 65, width: 350, height: 26)
         contentView.addSubview(titleLabel)
         
+        // Description (Main Body)
         let descLabel = NSTextField(labelWithString: "")
-        descLabel.stringValue = "To save and restore window layouts, this app requires:\n\n• Accessibility: To move/resize windows.\n• Screen Recording: To capture layout previews.\n\nPlease enable these in System Settings (requires Admin privileges). Enabling Screen Recording requires an app restart."
+        descLabel.stringValue = "To save and restore window layouts, this app requires:\n\n• Accessibility: To move/resize windows.\n• Screen Recording: To capture layout previews.\n\nPlease enable these in System Settings (requires Admin privileges).\n\n⚠️ If already checked: Please remove (-) and re-add (+) Snap Back in System Settings under Accessibility and Screen Recording to reset permissions after an app update."
         descLabel.font = NSFont.systemFont(ofSize: 13)
-        descLabel.frame = NSRect(x: 100, y: 110, width: 330, height: 130)
+        // Adjusted Frame to fit text without clipping
+        descLabel.frame = NSRect(x: 35, y: 110, width: 420, height: 190)
         descLabel.cell?.wraps = true
         contentView.addSubview(descLabel)
         
         // Buttons
-        let btnWidth: CGFloat = 180
+        let btnWidth: CGFloat = 200
         let btnHeight: CGFloat = 32
         
         let accessBtn = NSButton(title: "Open Accessibility", target: nil, action: nil)
-        accessBtn.frame = NSRect(x: 35, y: 60, width: btnWidth, height: btnHeight)
+        accessBtn.frame = NSRect(x: 35, y: 65, width: btnWidth, height: btnHeight)
         accessBtn.bezelStyle = .rounded
         
         let screenBtn = NSButton(title: "Open Screen Recording", target: nil, action: nil)
-        screenBtn.frame = NSRect(x: 235, y: 60, width: btnWidth, height: btnHeight)
+        screenBtn.frame = NSRect(x: 250, y: 65, width: btnWidth, height: btnHeight)
         screenBtn.bezelStyle = .rounded
         
         let quitBtn = NSButton(title: "Quit App", target: nil, action: nil)
@@ -429,7 +431,7 @@ func checkFirstRun() {
         quitBtn.bezelStyle = .rounded
         
         let continueBtn = NSButton(title: "Continue", target: nil, action: nil)
-        continueBtn.frame = NSRect(x: 315, y: 20, width: 100, height: btnHeight)
+        continueBtn.frame = NSRect(x: 350, y: 20, width: 100, height: btnHeight)
         continueBtn.bezelStyle = .rounded
         continueBtn.isEnabled = false
         
