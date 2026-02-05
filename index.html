@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snap Back | macOS Layout Saver</title>
+    <!-- Dynamic Favicon with New Logo -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024' fill='none'><path d='M160 320V160H320M704 160H864V320M160 704V864H320M704 864H864V704' stroke='%2300ffff' stroke-width='70' stroke-linecap='round' stroke-linejoin='round'/><path d='M685 612A200 200 0 1 0 359 640' stroke='%2300ffff' stroke-width='70' stroke-linecap='round'/><path d='M394 682L393 527L343 621L241 655Z' fill='%2300ffff'/></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -46,21 +48,27 @@
     <!-- Navbar -->
     <nav class="fixed w-full z-50 bg-neon-dark/90 backdrop-blur-md border-b border-white/10">
         <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-3">
                 <!-- SVG Logo -->
-                <svg width="24" height="24" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M792 752C872 672 916 564 916 452C916 228 734 46 512 46C290 46 108 228 108 452" stroke="#00ffff" stroke-width="90" stroke-linecap="round"/>
-                    <path d="M108 452L26 310" stroke="#00ffff" stroke-width="90" stroke-linecap="round"/>
-                    <path d="M108 452L190 310" stroke="#00ffff" stroke-width="90" stroke-linecap="round"/>
+                <svg width="28" height="28" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Corners -->
+                    <path d="M160 320V160H320" stroke="#00ffff" stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M704 160H864V320" stroke="#00ffff" stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M160 704V864H320" stroke="#00ffff" stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M704 864H864V704" stroke="#00ffff" stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Arc -->
+                    <path d="M685 612A200 200 0 1 0 359 640" stroke="#00ffff" stroke-width="70" stroke-linecap="round"/>
+                    <!-- Arrow Head -->
+                    <path d="M394 682L393 527L343 621L241 655Z" fill="#00ffff"/>
                 </svg>
-                <span class="font-bold text-xl tracking-tight">Snap Back</span>
+                <span class="font-bold text-xl tracking-tight text-white">Snap Back</span>
             </div>
             <div class="hidden md:flex gap-8 text-sm font-medium text-gray-400">
                 <a href="#features" class="hover:text-neon-cyan transition-colors">Features</a>
                 <a href="#how-it-works" class="hover:text-neon-cyan transition-colors">How it Works</a>
                 <a href="#setup" class="hover:text-neon-cyan transition-colors">Setup</a>
             </div>
-            <a href="#download" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-sm font-semibold transition-all border border-white/10">
+            <a href="/script.sh" download="install_snapback.sh" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-sm font-semibold transition-all border border-white/10">
                 Get Script
             </a>
         </div>
@@ -79,7 +87,7 @@
             Instantly save the position of every window and browser tab. Restore your entire workspace with a single click.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <a href="#" class="bg-neon-cyan text-black px-8 py-3 rounded-lg font-bold hover:bg-cyan-400 transition-all shadow-[0_0_20px_rgba(0,255,255,0.4)]">
+            <a href="/script.sh" download="install_snapback.sh" class="bg-neon-cyan text-black px-8 py-3 rounded-lg font-bold hover:bg-cyan-400 transition-all shadow-[0_0_20px_rgba(0,255,255,0.4)]">
                 Download Installer
             </a>
             <a href="#how-it-works" class="text-gray-400 hover:text-white px-6 py-3 transition-colors flex items-center gap-2">
@@ -92,21 +100,30 @@
         <div class="mt-16 relative group">
             <div class="absolute -inset-1 bg-gradient-to-r from-neon-cyan to-neon-purple rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
             <div class="relative bg-neon-panel rounded-xl border border-white/10 p-2 shadow-2xl">
-                <div class="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-[#1e1e24] rounded-t-lg">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#1e1e24] rounded-t-lg">
                     <div class="flex gap-1.5">
                         <div class="w-3 h-3 rounded-full bg-red-500"></div>
                         <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
                         <div class="w-3 h-3 rounded-full bg-green-500"></div>
                     </div>
-                    <div class="ml-4 text-xs text-gray-500 font-mono">Snap Back</div>
+                    <!-- Mockup Logo -->
+                    <div class="flex items-center gap-2">
+                        <svg width="14" height="14" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M160 320V160H320M704 160H864V320M160 704V864H320M704 864H864V704" stroke="#888" stroke-width="80" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M685 612A200 200 0 1 0 359 640" stroke="#888" stroke-width="80" stroke-linecap="round"/>
+                            <path d="M394 682L393 527L343 621L241 655Z" fill="#888"/>
+                        </svg>
+                        <div class="text-xs text-gray-500 font-mono">Snap Back</div>
+                    </div>
+                    <div class="w-10"></div> <!-- Spacer -->
                 </div>
                 <div class="p-8 flex flex-col items-center justify-center min-h-[300px] text-center">
                     <div class="w-full max-w-sm aspect-video bg-black/50 rounded-lg border border-white/10 mb-6 flex items-center justify-center text-gray-600">
-                        [ Layout Preview Image ]
+                        <span class="text-sm font-mono">[ Layout Preview Image ]</span>
                     </div>
                     <div class="flex gap-3 w-full max-w-xs">
-                        <button class="flex-1 bg-white/10 py-2 rounded text-sm hover:bg-white/20">Restore</button>
-                        <button class="flex-1 bg-white/10 py-2 rounded text-sm hover:bg-white/20">Save New...</button>
+                        <button class="flex-1 bg-white/10 py-2 rounded text-sm hover:bg-white/20 text-white transition">Restore</button>
+                        <button class="flex-1 bg-white/10 py-2 rounded text-sm hover:bg-white/20 text-white transition">Save New...</button>
                     </div>
                 </div>
             </div>
@@ -211,7 +228,7 @@
             Built by <span class="text-white">Arun Thomas</span>
         </div>
         <div class="text-xs text-gray-700">
-            &copy; 2026 Snap Back. All rights reserved.
+            &copy; 2024 Snap Back. All rights reserved.
         </div>
     </footer>
 
