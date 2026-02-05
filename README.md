@@ -16,7 +16,7 @@
 
 ---
 
-**Snap Back** is a free macOS utility to instantly save and restore your window layouts and browser tabs.
+**Snap Back** is a free macOS utility for **Power Users** to instantly save and restore **any app's** window layouts and browser tabs.
 
 Designed to replace manual window arrangement, Snap Back offers a streamlined interface for workspace management with real-time updates.
 
@@ -32,7 +32,7 @@ Designed to replace manual window arrangement, Snap Back offers a streamlined in
 
 ## ✨ Key Features
 
-*   **Instant Restore**: ⚡ Snap windows back to their exact pixel coordinates instantly.
+*   **Instant Restore**: ⚡ Snap **any app window** back to its exact pixel coordinates instantly.
 *   **Smart Tabs**: 🌐 Detects and restores open tabs in **Safari, Chrome, Brave, Edge, Arc, Vivaldi, Opera, and Firefox**.
 *   **Visual Previews**: 📸 See a screenshot of your saved layout before restoring.
 *   **Local Privacy**: 🔒 No cloud sync. No tracking. Your layout profiles live locally in your Pictures folder.
