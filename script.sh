@@ -358,6 +358,189 @@ func showScriptError(details: String?) {
     }
 }
 
+func checkFirstRun() {
+    let key = "HasShownFirstRunPermissions"
+    let defaults = UserDefaults.standard
+    
+    // Check permissions first - if all good, set flag and skip
+    let axTrusted = AXIsProcessTrusted()
+    var screenTrusted = false
+    if #available(macOS 10.15, *) {
+        screenTrusted = CGPreflightScreenCaptureAccess()
+    } else {
+        screenTrusted = true // Fallback for older macOS
+    }
+    
+    if axTrusted && screenTrusted {
+        defaults.set(true, forKey: key)
+        return
+    }
+    
+    // Show window if permissions are missing OR flag is not set (enforce permissions)
+    if !axTrusted || !screenTrusted || !defaults.bool(forKey: key) {
+        
+        // Custom Window for Timer Logic
+        let winWidth: CGFloat = 450
+        let winHeight: CGFloat = 320
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: winWidth, height: winHeight),
+            styleMask: [.titled],
+            backing: .buffered,
+            defer: false
+        )
+        window.center()
+        window.title = "Welcome to Snap Back"
+        
+        let contentView = NSView(frame: NSRect(x: 0, y: 0, width: winWidth, height: winHeight))
+        window.contentView = contentView
+        
+        // Icon
+        let iconView = NSImageView(frame: NSRect(x: 20, y: winHeight - 80, width: 64, height: 64))
+        iconView.image = NSApplication.shared.applicationIconImage
+        contentView.addSubview(iconView)
+        
+        // Text
+        let titleLabel = NSTextField(labelWithString: "Welcome to Snap Back")
+        titleLabel.font = NSFont.boldSystemFont(ofSize: 18)
+        titleLabel.frame = NSRect(x: 100, y: winHeight - 50, width: 330, height: 24)
+        contentView.addSubview(titleLabel)
+        
+        let descLabel = NSTextField(labelWithString: "")
+        descLabel.stringValue = "To save and restore window layouts, this app requires:\n\n• Accessibility: To move/resize windows.\n• Screen Recording: To capture layout previews.\n\nPlease enable these in System Settings (requires Admin privileges). Enabling Screen Recording requires an app restart."
+        descLabel.font = NSFont.systemFont(ofSize: 13)
+        descLabel.frame = NSRect(x: 100, y: 110, width: 330, height: 130)
+        descLabel.cell?.wraps = true
+        contentView.addSubview(descLabel)
+        
+        // Buttons
+        let btnWidth: CGFloat = 180
+        let btnHeight: CGFloat = 32
+        
+        let accessBtn = NSButton(title: "Open Accessibility", target: nil, action: nil)
+        accessBtn.frame = NSRect(x: 35, y: 60, width: btnWidth, height: btnHeight)
+        accessBtn.bezelStyle = .rounded
+        
+        let screenBtn = NSButton(title: "Open Screen Recording", target: nil, action: nil)
+        screenBtn.frame = NSRect(x: 235, y: 60, width: btnWidth, height: btnHeight)
+        screenBtn.bezelStyle = .rounded
+        
+        let quitBtn = NSButton(title: "Quit App", target: nil, action: nil)
+        quitBtn.frame = NSRect(x: 35, y: 20, width: 100, height: btnHeight)
+        quitBtn.bezelStyle = .rounded
+        
+        let continueBtn = NSButton(title: "Continue", target: nil, action: nil)
+        continueBtn.frame = NSRect(x: 315, y: 20, width: 100, height: btnHeight)
+        continueBtn.bezelStyle = .rounded
+        continueBtn.isEnabled = false
+        
+        contentView.addSubview(accessBtn)
+        contentView.addSubview(screenBtn)
+        contentView.addSubview(quitBtn)
+        contentView.addSubview(continueBtn)
+        
+        // Logic Class
+        class FirstRunHandler: NSObject {
+            var timer: Timer?
+            var window: NSWindow
+            var continueBtn: NSButton
+            var accessBtn: NSButton
+            var screenBtn: NSButton
+            
+            init(window: NSWindow, continueBtn: NSButton, accessBtn: NSButton, screenBtn: NSButton) {
+                self.window = window
+                self.continueBtn = continueBtn
+                self.accessBtn = accessBtn
+                self.screenBtn = screenBtn
+                super.init()
+                
+                // IMPORTANT: Add timer to common mode to ensure it fires during modal run loop
+                let t = Timer(timeInterval: 1.0, target: self, selector: #selector(tick), userInfo: nil, repeats: true)
+                RunLoop.current.add(t, forMode: .common)
+                self.timer = t
+                
+                self.checkPermissions() // Initial check
+            }
+            
+            @objc func tick() {
+                // Poll permissions every second
+                let allEnabled = checkPermissions()
+                
+                if allEnabled {
+                    continueBtn.isEnabled = true
+                } else {
+                    continueBtn.isEnabled = false
+                }
+            }
+            
+            @discardableResult
+            func checkPermissions() -> Bool {
+                var axOk = false
+                var screenOk = false
+                
+                // Check Accessibility
+                if AXIsProcessTrusted() {
+                    axOk = true
+                    accessBtn.title = "Accessibility: Enabled ✅"
+                    // accessBtn.bezelColor = NSColor.systemGreen 
+                    // Note: bezelColor might not show on all button styles, title update is safer
+                    accessBtn.isEnabled = false
+                } else {
+                     accessBtn.title = "Open Accessibility"
+                     accessBtn.isEnabled = true
+                }
+
+                // Check Screen Recording
+                if #available(macOS 10.15, *) {
+                    if CGPreflightScreenCaptureAccess() {
+                        screenOk = true
+                        screenBtn.title = "Screen Rec: Enabled ✅"
+                        screenBtn.isEnabled = false
+                    } else {
+                         screenBtn.title = "Open Screen Recording"
+                         screenBtn.isEnabled = true
+                    }
+                } else { screenOk = true }
+                
+                return axOk && screenOk
+            }
+            
+            @objc func openAccess(_ sender: Any) {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+            
+            @objc func openScreen(_ sender: Any) {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+            
+            @objc func continueClicked(_ sender: Any) {
+                timer?.invalidate()
+                NSApplication.shared.stopModal()
+                window.close()
+            }
+            
+            @objc func quitClicked(_ sender: Any) {
+                exit(0)
+            }
+        }
+        
+        let frHandler = FirstRunHandler(window: window, continueBtn: continueBtn, accessBtn: accessBtn, screenBtn: screenBtn)
+        accessBtn.target = frHandler; accessBtn.action = #selector(FirstRunHandler.openAccess(_:))
+        screenBtn.target = frHandler; screenBtn.action = #selector(FirstRunHandler.openScreen(_:))
+        continueBtn.target = frHandler; continueBtn.action = #selector(FirstRunHandler.continueClicked(_:))
+        quitBtn.target = frHandler; quitBtn.action = #selector(FirstRunHandler.quitClicked(_:))
+        
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        NSApplication.shared.runModal(for: window)
+        
+        // Only set flag if we actually passed the checks (which we did if we are here)
+        defaults.set(true, forKey: key)
+    }
+}
+
 func showHelp() {
     let alert = NSAlert()
     alert.messageText = "How to Use Snap Back"
@@ -903,6 +1086,8 @@ alert.accessoryView = container
 
 app.finishLaunching()
 app.activate(ignoringOtherApps: true)
+
+checkFirstRun()
 
 // --- LOOP ---
 while true {
