@@ -49,7 +49,8 @@
     </script>
 
     <!-- Dynamic Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024' fill='none'><path d='M160 320V160H320M704 160H864V320M160 704V864H320M704 864H864V704' stroke='%2300ffff' stroke-width='70' stroke-linecap='round' stroke-linejoin='round'/><path d='M685 612A200 200 0 1 0 359 640' stroke='%2300ffff' stroke-width='70' stroke-linecap='round'/><path d='M394 682L393 527L343 621L241 655Z' fill='%2300ffff'/></svg>">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" href="/favicon.svg">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -132,6 +133,9 @@
                 border-color: rgba(157, 0, 255, 0.8);
             }
         }
+
+        .dock-icon:active { transform: scale(0.9); }
+        .win-close:active { transform: scale(0.9); }
     </style>
 </head>
 <body class="antialiased selection:bg-neon-purple selection:text-white">
@@ -197,33 +201,87 @@
         </div>
         
         <!-- App Preview Mockup -->
-        <div class="mt-16 relative group">
+        <div class="mt-8 relative group">
             <div class="absolute -inset-1 bg-gradient-to-r from-neon-cyan to-neon-purple rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
             <div class="relative bg-neon-panel rounded-xl border border-white/10 p-2 shadow-2xl">
-                <div class="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#1e1e24] rounded-t-lg">
-                    <div class="flex gap-1.5">
-                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                <div class="p-4 flex flex-col items-center justify-center min-h-[300px] text-center">
+                    <div class="mb-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon-green/10 border border-neon-green/30 text-neon-green text-xs font-mono animate-pulse">
+                        <span class="w-2 h-2 rounded-full bg-neon-green"></span> Live Demo
                     </div>
-                    <!-- Mockup Logo -->
-                    <div class="flex items-center gap-2">
-                        <svg width="14" height="14" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M160 320V160H320M704 160H864V320M160 704V864H320M704 864H864V704" stroke="#888" stroke-width="80" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M685 612A200 200 0 1 0 359 640" stroke="#888" stroke-width="80" stroke-linecap="round"/>
-                            <path d="M394 682L393 527L343 621L241 655Z" fill="#888"/>
-                        </svg>
-                        <div class="text-xs text-gray-500 font-mono">Snap Back</div>
-                    </div>
-                    <div class="w-10"></div> <!-- Spacer -->
-                </div>
-                <div class="p-8 flex flex-col items-center justify-center min-h-[300px] text-center">
-                    <div class="w-full max-w-sm aspect-video bg-black/50 rounded-lg border border-white/10 mb-6 flex items-center justify-center text-gray-600">
-                        <span class="text-sm font-mono">[ Layout Preview Image ]</span>
+                    <div id="demo-container" class="relative w-full max-w-3xl h-[350px] md:h-auto md:aspect-video bg-black/50 rounded-lg border border-white/10 mb-6 overflow-hidden select-none touch-none">
+                        <!-- Draggable Window 1 -->
+                        <div class="demo-window absolute w-24 h-16 bg-[#2a2a30] rounded shadow-lg border border-white/20 top-[20px] left-[20px] flex flex-col group" id="win1" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                            <div class="window-header h-6 md:h-4 bg-white/10 rounded-t w-full flex items-center px-2 md:px-1.5 gap-1.5 md:gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing touch-manipulation">
+                                <div class="win-close w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer"></div>
+                                <div class="w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#ffbd2e]"></div>
+                                <div class="w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#27c93f]"></div>
+                            </div>
+                            <div class="flex-1 p-2 relative">
+                                <div class="w-full h-2 bg-white/10 rounded mb-1.5"></div>
+                                <div class="w-2/3 h-2 bg-white/10 rounded"></div>
+                                <!-- Resize Handle -->
+                                <div class="resize-handle absolute bottom-0 right-0 w-6 h-6 md:w-4 md:h-4 cursor-se-resize flex items-end justify-end p-0.5 opacity-50 md:opacity-0 group-hover:opacity-100 transition-opacity touch-manipulation">
+                                    <div class="w-2 h-2 md:w-1.5 md:h-1.5 border-r border-b border-white/30 rounded-br-[1px]"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Draggable Window 2 -->
+                        <div class="demo-window absolute w-32 h-24 bg-[#1e1e24] rounded shadow-lg border border-white/20 top-[60px] left-[100px] md:left-[150px] flex flex-col group" id="win2" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                             <div class="window-header h-6 md:h-4 bg-white/10 rounded-t w-full flex items-center px-2 md:px-1.5 gap-1.5 md:gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing touch-manipulation">
+                                <div class="win-close w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer"></div>
+                                <div class="w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#ffbd2e]"></div>
+                                <div class="w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#27c93f]"></div>
+                            </div>
+                            <div class="flex-1 p-2 flex items-center justify-center relative">
+                                 <div class="w-8 h-8 rounded-full border-2 border-neon-cyan/30 flex items-center justify-center pointer-events-none">
+                                    <div class="w-1 h-3 bg-neon-cyan/50 rounded-full"></div>
+                                 </div>
+                                 <!-- Resize Handle -->
+                                <div class="resize-handle absolute bottom-0 right-0 w-6 h-6 md:w-4 md:h-4 cursor-se-resize flex items-end justify-end p-0.5 opacity-50 md:opacity-0 group-hover:opacity-100 transition-opacity touch-manipulation">
+                                    <div class="w-2 h-2 md:w-1.5 md:h-1.5 border-r border-b border-white/30 rounded-br-[1px]"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Draggable Window 3 (Terminal) -->
+                        <div class="demo-window absolute w-28 h-20 bg-[#0f0f12] rounded shadow-lg border border-white/20 top-[120px] md:top-[90px] left-[40px] flex flex-col group" id="win3" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                            <div class="window-header h-6 md:h-4 bg-white/10 rounded-t w-full flex items-center px-2 md:px-1.5 gap-1.5 md:gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing touch-manipulation">
+                                <div class="win-close w-2 h-2 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer"></div>
+                                <div class="w-2 h-2 rounded-full bg-[#ffbd2e]"></div>
+                                <div class="w-2 h-2 rounded-full bg-[#27c93f]"></div>
+                            </div>
+                            <div class="flex-1 p-2 font-mono text-[6px] text-neon-green leading-tight overflow-hidden relative">
+                                <span class="text-neon-cyan">~</span> $ echo "Hello"<br>Hello<br><span class="text-neon-cyan">~</span> <span class="animate-pulse">_</span>
+                                <!-- Resize Handle -->
+                                <div class="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div class="w-1.5 h-1.5 border-r border-b border-white/30 rounded-br-[1px]"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dock -->
+                        <div class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md rounded-xl px-2 py-1.5 flex gap-2 border border-white/5 shadow-lg z-30">
+                            <!-- Dock Icon 1 -->
+                            <div class="dock-icon w-8 h-8 rounded-lg bg-[#2a2a30] border border-white/10 flex items-center justify-center cursor-pointer hover:-translate-y-1 transition-transform relative group" data-target="win1">
+                                <div class="w-4 h-1 bg-white/20 rounded"></div>
+                                <div class="absolute -bottom-1 w-1 h-1 bg-white/50 rounded-full opacity-100 transition-opacity" id="dot-win1"></div>
+                            </div>
+                            <!-- Dock Icon 2 -->
+                            <div class="dock-icon w-8 h-8 rounded-lg bg-[#1e1e24] border border-white/10 flex items-center justify-center cursor-pointer hover:-translate-y-1 transition-transform relative group" data-target="win2">
+                                <div class="w-4 h-4 rounded-full border-2 border-neon-cyan/30 flex items-center justify-center">
+                                    <div class="w-0.5 h-1.5 bg-neon-cyan/50 rounded-full"></div>
+                                </div>
+                                <div class="absolute -bottom-1 w-1 h-1 bg-white/50 rounded-full opacity-100 transition-opacity" id="dot-win2"></div>
+                            </div>
+                             <!-- Dock Icon 3 -->
+                             <div class="dock-icon w-8 h-8 rounded-lg bg-[#0f0f12] border border-white/10 flex items-center justify-center cursor-pointer hover:-translate-y-1 transition-transform relative group" data-target="win3">
+                                <div class="text-[8px] font-mono text-neon-green">>_</div>
+                                <div class="absolute -bottom-1 w-1 h-1 bg-white/50 rounded-full opacity-100 transition-opacity" id="dot-win3"></div>
+                            </div>
+                        </div>
                     </div>
                     <div class="flex gap-3 w-full max-w-xs">
-                        <button class="flex-1 bg-white/10 py-2 rounded text-sm hover:bg-white/20 text-white transition">Restore</button>
-                        <button class="flex-1 bg-white/10 py-2 rounded text-sm hover:bg-white/20 text-white transition">Save New...</button>
+                        <button id="demo-restore-btn" class="flex-1 bg-white/10 py-2 rounded text-sm hover:bg-white/20 text-white transition">Restore</button>
+                        <button id="demo-save-btn" class="flex-1 bg-white/10 py-2 rounded text-sm hover:bg-white/20 text-white transition">Save New...</button>
                     </div>
                 </div>
             </div>
@@ -392,6 +450,243 @@
             // Clear text initially and start typing after a delay
             textElement.textContent = '';
             setTimeout(type, 500);
+        });
+
+        // Interactive Demo Script
+        document.addEventListener('DOMContentLoaded', () => {
+            const windows = document.querySelectorAll('.demo-window');
+            const container = document.getElementById('demo-container');
+            const saveBtn = document.getElementById('demo-save-btn');
+            const restoreBtn = document.getElementById('demo-restore-btn');
+            const dockIcons = document.querySelectorAll('.dock-icon');
+
+            if (!container || !saveBtn || !restoreBtn) return;
+
+            // State
+            let savedState = {};
+            let isDragging = false;
+            let isResizing = false;
+            let activeElement = null;
+            let startX, startY, initialLeft, initialTop, initialWidth, initialHeight;
+
+            // Helper: Bring window to front
+            function bringToFront(win) {
+                windows.forEach(w => w.style.zIndex = 10);
+                win.style.zIndex = 20;
+            }
+
+            // Helper: Update Dock Dot
+            function updateDockDot(winId, isVisible) {
+                const dot = document.getElementById(`dot-${winId}`);
+                if (dot) dot.style.opacity = isVisible ? '1' : '0';
+            }
+
+            // 0. Mobile Adjustment (Initial Layout)
+            function adjustForMobile() {
+                if (window.innerWidth < 640) {
+                    // Stagger windows vertically for mobile
+                    const win1 = document.getElementById('win1');
+                    const win2 = document.getElementById('win2');
+                    const win3 = document.getElementById('win3');
+
+                    if(win1) { win1.style.top = '10px'; win1.style.left = '10px'; }
+                    if(win2) { win2.style.top = '80px'; win2.style.left = '30px'; }
+                    if(win3) { win3.style.top = '150px'; win3.style.left = '50px'; }
+                }
+            }
+            adjustForMobile();
+
+            // 1. Save Logic
+            function saveCurrentState() {
+                windows.forEach(win => {
+                    const style = window.getComputedStyle(win);
+                    savedState[win.id] = {
+                        top: win.style.top,
+                        left: win.style.left,
+                        width: win.style.width,
+                        height: win.style.height,
+                        display: win.style.display || 'flex' // default is flex
+                    };
+                });
+            }
+            // Save initial state immediately (after mobile adjustment)
+            saveCurrentState();
+
+            // 2. Window Interactions (Drag, Resize, Close)
+            windows.forEach(win => {
+                const header = win.querySelector('.window-header');
+                const closeBtn = win.querySelector('.win-close');
+                const resizeHandle = win.querySelector('.resize-handle');
+
+                // Close Button
+                const closeWindow = (e) => {
+                    e.stopPropagation();
+                    if (e.cancelable) e.preventDefault();
+                    win.style.display = 'none';
+                    updateDockDot(win.id, false);
+                };
+                closeBtn.addEventListener('mousedown', closeWindow);
+                closeBtn.addEventListener('touchstart', closeWindow, { passive: false });
+
+                // Drag Start (Header only)
+                const startDrag = (e) => {
+                    if (e.target.classList.contains('win-close')) return;
+
+                    isDragging = true;
+                    activeElement = win;
+                    bringToFront(win);
+                    win.style.transition = 'none';
+
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                    startX = clientX;
+                    startY = clientY;
+
+                    const style = window.getComputedStyle(win);
+                    initialLeft = parseInt(style.left, 10) || 0;
+                    initialTop = parseInt(style.top, 10) || 0;
+
+                    if (e.cancelable) e.preventDefault();
+                };
+                header.addEventListener('mousedown', startDrag);
+                header.addEventListener('touchstart', startDrag, { passive: false });
+
+                // Resize Start
+                if (resizeHandle) {
+                    const startResize = (e) => {
+                        e.stopPropagation();
+                        isResizing = true;
+                        activeElement = win;
+                        bringToFront(win);
+                        win.style.transition = 'none';
+
+                        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                        startX = clientX;
+                        startY = clientY;
+
+                        const style = window.getComputedStyle(win);
+                        initialWidth = parseInt(style.width, 10) || 100;
+                        initialHeight = parseInt(style.height, 10) || 100;
+
+                        if (e.cancelable) e.preventDefault();
+                    };
+                    resizeHandle.addEventListener('mousedown', startResize);
+                    resizeHandle.addEventListener('touchstart', startResize, { passive: false });
+                }
+            });
+
+            // Global Move (Drag & Resize)
+            const handleMove = (e) => {
+                if (!activeElement) return;
+
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+
+                if (isDragging) {
+                    let newLeft = initialLeft + dx;
+                    let newTop = initialTop + dy;
+                    activeElement.style.left = `${newLeft}px`;
+                    activeElement.style.top = `${newTop}px`;
+                } else if (isResizing) {
+                    let newWidth = Math.max(80, initialWidth + dx);
+                    let newHeight = Math.max(60, initialHeight + dy);
+                    activeElement.style.width = `${newWidth}px`;
+                    activeElement.style.height = `${newHeight}px`;
+                }
+
+                if (e.cancelable) e.preventDefault(); // Prevent scrolling on mobile
+            };
+            document.addEventListener('mousemove', handleMove);
+            document.addEventListener('touchmove', handleMove, { passive: false });
+
+            // Global Up
+            const handleUp = () => {
+                if (activeElement) {
+                    activeElement.style.transition = 'all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)';
+                    activeElement = null;
+                }
+                isDragging = false;
+                isResizing = false;
+            };
+            document.addEventListener('mouseup', handleUp);
+            document.addEventListener('touchend', handleUp);
+
+            // 3. Dock Interactions
+            dockIcons.forEach(icon => {
+                icon.addEventListener('click', () => {
+                    const targetId = icon.getAttribute('data-target');
+                    const targetWin = document.getElementById(targetId);
+                    if (targetWin) {
+                        // Toggle logic: If visible and top, hide (minimize). Else show and bring to front.
+                        const isVisible = targetWin.style.display !== 'none';
+                        const isTop = targetWin.style.zIndex == 20;
+
+                        if (isVisible && isTop) {
+                            // Minimize (optional feature, strictly "launch" requested but toggle is nicer)
+                             // targetWin.style.display = 'none';
+                             // updateDockDot(targetId, false);
+                             // Actually, let's just make it "Launch/Focus" to avoid confusion.
+                             // If it's already there, just shake it or something?
+                             // Let's stick to "Launch if closed, Focus if open".
+                             bringToFront(targetWin);
+                        } else {
+                            targetWin.style.display = 'flex';
+                            updateDockDot(targetId, true);
+                            bringToFront(targetWin);
+
+                            // Reset position if off-screen (safety)
+                            const style = window.getComputedStyle(targetWin);
+                            if (style.display === 'none') { // wait, we just set it to flex
+                                // Check coords? Nah, keep it simple.
+                            }
+                        }
+                    }
+                });
+            });
+
+            // 4. Save Button
+            saveBtn.addEventListener('click', () => {
+                saveCurrentState();
+
+                // Visual Feedback
+                const originalText = saveBtn.innerText;
+                saveBtn.innerText = "Saved!";
+                saveBtn.classList.add('text-neon-cyan');
+                setTimeout(() => {
+                    saveBtn.innerText = originalText;
+                    saveBtn.classList.remove('text-neon-cyan');
+                }, 1000);
+            });
+
+            // 5. Restore Button
+            restoreBtn.addEventListener('click', () => {
+                windows.forEach(win => {
+                    const state = savedState[win.id];
+                    if (state) {
+                        win.style.left = state.left;
+                        win.style.top = state.top;
+                        win.style.width = state.width;
+                        win.style.height = state.height;
+                        win.style.display = state.display;
+                        updateDockDot(win.id, state.display !== 'none');
+                    }
+                });
+
+                // Flash container
+                const originalShadow = container.style.boxShadow;
+                container.style.boxShadow = "0 0 20px rgba(0, 255, 255, 0.3)";
+                container.style.borderColor = "rgba(0, 255, 255, 0.5)";
+                setTimeout(() => {
+                    container.style.boxShadow = originalShadow;
+                    container.style.borderColor = "";
+                }, 500);
+            });
         });
     </script>
 </body>
