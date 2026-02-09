@@ -132,6 +132,9 @@
                 border-color: rgba(157, 0, 255, 0.8);
             }
         }
+        
+        .dock-icon:active { transform: scale(0.9); }
+        .win-close:active { transform: scale(0.9); }
     </style>
 </head>
 <body class="antialiased selection:bg-neon-purple selection:text-white">
@@ -218,30 +221,74 @@
                     <div class="w-10"></div> <!-- Spacer -->
                 </div>
                 <div class="p-8 flex flex-col items-center justify-center min-h-[300px] text-center">
-                    <div id="demo-container" class="relative w-full max-w-sm aspect-video bg-black/50 rounded-lg border border-white/10 mb-6 overflow-hidden">
+                    <div id="demo-container" class="relative w-full max-w-sm aspect-video bg-black/50 rounded-lg border border-white/10 mb-6 overflow-hidden select-none">
                         <!-- Draggable Window 1 -->
-                        <div class="demo-window absolute w-24 h-16 bg-[#2a2a30] rounded shadow-lg border border-white/20 top-[20px] left-[20px] cursor-grab active:cursor-grabbing flex flex-col group" id="win1" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
-                            <div class="h-4 bg-white/10 rounded-t w-full flex items-center px-1.5 gap-1 border-b border-white/5">
-                                <div class="w-2 h-2 rounded-full bg-[#ff5f56]"></div>
+                        <div class="demo-window absolute w-24 h-16 bg-[#2a2a30] rounded shadow-lg border border-white/20 top-[20px] left-[20px] flex flex-col group" id="win1" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                            <div class="window-header h-4 bg-white/10 rounded-t w-full flex items-center px-1.5 gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing">
+                                <div class="win-close w-2 h-2 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer"></div>
                                 <div class="w-2 h-2 rounded-full bg-[#ffbd2e]"></div>
                                 <div class="w-2 h-2 rounded-full bg-[#27c93f]"></div>
                             </div>
-                            <div class="flex-1 p-2">
+                            <div class="flex-1 p-2 relative">
                                 <div class="w-full h-2 bg-white/10 rounded mb-1.5"></div>
                                 <div class="w-2/3 h-2 bg-white/10 rounded"></div>
+                                <!-- Resize Handle -->
+                                <div class="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div class="w-1.5 h-1.5 border-r border-b border-white/30 rounded-br-[1px]"></div>
+                                </div>
                             </div>
                         </div>
                         <!-- Draggable Window 2 -->
-                        <div class="demo-window absolute w-32 h-24 bg-[#1e1e24] rounded shadow-lg border border-white/20 top-[60px] left-[150px] cursor-grab active:cursor-grabbing flex flex-col group" id="win2" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
-                             <div class="h-4 bg-white/10 rounded-t w-full flex items-center px-1.5 gap-1 border-b border-white/5">
-                                <div class="w-2 h-2 rounded-full bg-[#ff5f56]"></div>
+                        <div class="demo-window absolute w-32 h-24 bg-[#1e1e24] rounded shadow-lg border border-white/20 top-[60px] left-[150px] flex flex-col group" id="win2" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                             <div class="window-header h-4 bg-white/10 rounded-t w-full flex items-center px-1.5 gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing">
+                                <div class="win-close w-2 h-2 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer"></div>
                                 <div class="w-2 h-2 rounded-full bg-[#ffbd2e]"></div>
                                 <div class="w-2 h-2 rounded-full bg-[#27c93f]"></div>
                             </div>
-                            <div class="flex-1 p-2 flex items-center justify-center">
-                                 <div class="w-8 h-8 rounded-full border-2 border-neon-cyan/30 flex items-center justify-center">
+                            <div class="flex-1 p-2 flex items-center justify-center relative">
+                                 <div class="w-8 h-8 rounded-full border-2 border-neon-cyan/30 flex items-center justify-center pointer-events-none">
                                     <div class="w-1 h-3 bg-neon-cyan/50 rounded-full"></div>
                                  </div>
+                                 <!-- Resize Handle -->
+                                <div class="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div class="w-1.5 h-1.5 border-r border-b border-white/30 rounded-br-[1px]"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Draggable Window 3 (Terminal) -->
+                        <div class="demo-window absolute w-28 h-20 bg-[#0f0f12] rounded shadow-lg border border-white/20 top-[90px] left-[40px] flex flex-col group" id="win3" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                            <div class="window-header h-4 bg-white/10 rounded-t w-full flex items-center px-1.5 gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing">
+                                <div class="win-close w-2 h-2 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer"></div>
+                                <div class="w-2 h-2 rounded-full bg-[#ffbd2e]"></div>
+                                <div class="w-2 h-2 rounded-full bg-[#27c93f]"></div>
+                            </div>
+                            <div class="flex-1 p-2 font-mono text-[6px] text-neon-green leading-tight overflow-hidden relative">
+                                <span class="text-neon-cyan">~</span> $ echo "Hello"<br>Hello<br><span class="text-neon-cyan">~</span> <span class="animate-pulse">_</span>
+                                <!-- Resize Handle -->
+                                <div class="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div class="w-1.5 h-1.5 border-r border-b border-white/30 rounded-br-[1px]"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dock -->
+                        <div class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md rounded-xl px-2 py-1.5 flex gap-2 border border-white/5 shadow-lg z-30">
+                            <!-- Dock Icon 1 -->
+                            <div class="dock-icon w-8 h-8 rounded-lg bg-[#2a2a30] border border-white/10 flex items-center justify-center cursor-pointer hover:-translate-y-1 transition-transform relative group" data-target="win1">
+                                <div class="w-4 h-1 bg-white/20 rounded"></div>
+                                <div class="absolute -bottom-1 w-1 h-1 bg-white/50 rounded-full opacity-100 transition-opacity" id="dot-win1"></div>
+                            </div>
+                            <!-- Dock Icon 2 -->
+                            <div class="dock-icon w-8 h-8 rounded-lg bg-[#1e1e24] border border-white/10 flex items-center justify-center cursor-pointer hover:-translate-y-1 transition-transform relative group" data-target="win2">
+                                <div class="w-4 h-4 rounded-full border-2 border-neon-cyan/30 flex items-center justify-center">
+                                    <div class="w-0.5 h-1.5 bg-neon-cyan/50 rounded-full"></div>
+                                </div>
+                                <div class="absolute -bottom-1 w-1 h-1 bg-white/50 rounded-full opacity-100 transition-opacity" id="dot-win2"></div>
+                            </div>
+                             <!-- Dock Icon 3 -->
+                             <div class="dock-icon w-8 h-8 rounded-lg bg-[#0f0f12] border border-white/10 flex items-center justify-center cursor-pointer hover:-translate-y-1 transition-transform relative group" data-target="win3">
+                                <div class="text-[8px] font-mono text-neon-green">>_</div>
+                                <div class="absolute -bottom-1 w-1 h-1 bg-white/50 rounded-full opacity-100 transition-opacity" id="dot-win3"></div>
                             </div>
                         </div>
                     </div>
@@ -424,107 +471,196 @@
             const container = document.getElementById('demo-container');
             const saveBtn = document.getElementById('demo-save-btn');
             const restoreBtn = document.getElementById('demo-restore-btn');
+            const dockIcons = document.querySelectorAll('.dock-icon');
             
             if (!container || !saveBtn || !restoreBtn) return;
 
-            // Initial state
+            // State
             let savedState = {};
-            
-            // Save initial positions
+            let isDragging = false;
+            let isResizing = false;
+            let activeElement = null;
+            let startX, startY, initialLeft, initialTop, initialWidth, initialHeight;
+
+            // Helper: Bring window to front
+            function bringToFront(win) {
+                windows.forEach(w => w.style.zIndex = 10);
+                win.style.zIndex = 20;
+            }
+
+            // Helper: Update Dock Dot
+            function updateDockDot(winId, isVisible) {
+                const dot = document.getElementById(`dot-${winId}`);
+                if (dot) dot.style.opacity = isVisible ? '1' : '0';
+            }
+
+            // 1. Save Logic
             function saveCurrentState() {
                 windows.forEach(win => {
+                    const style = window.getComputedStyle(win);
                     savedState[win.id] = {
                         top: win.style.top,
-                        left: win.style.left
+                        left: win.style.left,
+                        width: win.style.width,
+                        height: win.style.height,
+                        display: win.style.display || 'flex' // default is flex
                     };
                 });
             }
+            // Save initial state immediately
             saveCurrentState();
 
-            // Drag Logic
-            let isDragging = false;
-            let currentWin = null;
-            let startX, startY, initialLeft, initialTop;
-
+            // 2. Window Interactions (Drag, Resize, Close)
             windows.forEach(win => {
-                win.addEventListener('mousedown', (e) => {
+                const header = win.querySelector('.window-header');
+                const closeBtn = win.querySelector('.win-close');
+                const resizeHandle = win.querySelector('.resize-handle');
+
+                // Close Button
+                closeBtn.addEventListener('mousedown', (e) => {
+                    e.stopPropagation(); // Prevent drag start
+                    win.style.display = 'none';
+                    updateDockDot(win.id, false);
+                });
+
+                // Drag Start (Header only)
+                header.addEventListener('mousedown', (e) => {
+                    if (e.target.classList.contains('win-close')) return;
+                    
                     isDragging = true;
-                    currentWin = win;
-                    
-                    // Disable transition during drag
-                    win.style.transition = 'none';
-                    
-                    // Bring to front
-                    windows.forEach(w => w.style.zIndex = 10);
-                    win.style.zIndex = 20;
+                    activeElement = win;
+                    bringToFront(win);
+                    win.style.transition = 'none'; // Disable transition for smooth drag
 
                     startX = e.clientX;
                     startY = e.clientY;
                     
-                    // Parse current left/top (remove 'px')
                     const style = window.getComputedStyle(win);
                     initialLeft = parseInt(style.left, 10) || 0;
                     initialTop = parseInt(style.top, 10) || 0;
                     
-                    e.preventDefault(); // Prevent text selection
+                    e.preventDefault();
                 });
+
+                // Resize Start
+                if (resizeHandle) {
+                    resizeHandle.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                        isResizing = true;
+                        activeElement = win;
+                        bringToFront(win);
+                        win.style.transition = 'none';
+
+                        startX = e.clientX;
+                        startY = e.clientY;
+
+                        const style = window.getComputedStyle(win);
+                        initialWidth = parseInt(style.width, 10) || 100;
+                        initialHeight = parseInt(style.height, 10) || 100;
+
+                        e.preventDefault();
+                    });
+                }
             });
 
+            // Global Mouse Move (Drag & Resize)
             document.addEventListener('mousemove', (e) => {
-                if (!isDragging || !currentWin) return;
+                if (!activeElement) return;
 
                 const dx = e.clientX - startX;
                 const dy = e.clientY - startY;
 
-                let newLeft = initialLeft + dx;
-                let newTop = initialTop + dy;
-
-                // Apply positions (simplified boundaries)
-                currentWin.style.left = `${newLeft}px`;
-                currentWin.style.top = `${newTop}px`;
+                if (isDragging) {
+                    let newLeft = initialLeft + dx;
+                    let newTop = initialTop + dy;
+                    activeElement.style.left = `${newLeft}px`;
+                    activeElement.style.top = `${newTop}px`;
+                } else if (isResizing) {
+                    let newWidth = Math.max(80, initialWidth + dx); // Min width 80
+                    let newHeight = Math.max(60, initialHeight + dy); // Min height 60
+                    activeElement.style.width = `${newWidth}px`;
+                    activeElement.style.height = `${newHeight}px`;
+                }
             });
 
+            // Global Mouse Up
             document.addEventListener('mouseup', () => {
-                if (isDragging && currentWin) {
-                    // Re-enable transition
-                    currentWin.style.transition = 'all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)';
+                if (activeElement) {
+                    activeElement.style.transition = 'all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)';
+                    activeElement = null;
                 }
                 isDragging = false;
-                currentWin = null;
+                isResizing = false;
             });
 
-            // Save Action
+            // 3. Dock Interactions
+            dockIcons.forEach(icon => {
+                icon.addEventListener('click', () => {
+                    const targetId = icon.getAttribute('data-target');
+                    const targetWin = document.getElementById(targetId);
+                    if (targetWin) {
+                        // Toggle logic: If visible and top, hide (minimize). Else show and bring to front.
+                        const isVisible = targetWin.style.display !== 'none';
+                        const isTop = targetWin.style.zIndex == 20;
+
+                        if (isVisible && isTop) {
+                            // Minimize (optional feature, strictly "launch" requested but toggle is nicer)
+                             // targetWin.style.display = 'none';
+                             // updateDockDot(targetId, false);
+                             // Actually, let's just make it "Launch/Focus" to avoid confusion.
+                             // If it's already there, just shake it or something? 
+                             // Let's stick to "Launch if closed, Focus if open".
+                             bringToFront(targetWin);
+                        } else {
+                            targetWin.style.display = 'flex';
+                            updateDockDot(targetId, true);
+                            bringToFront(targetWin);
+                            
+                            // Reset position if off-screen (safety)
+                            const style = window.getComputedStyle(targetWin);
+                            if (style.display === 'none') { // wait, we just set it to flex
+                                // Check coords? Nah, keep it simple.
+                            }
+                        }
+                    }
+                });
+            });
+
+            // 4. Save Button
             saveBtn.addEventListener('click', () => {
+                saveCurrentState();
+                
+                // Visual Feedback
                 const originalText = saveBtn.innerText;
                 saveBtn.innerText = "Saved!";
                 saveBtn.classList.add('text-neon-cyan');
-                
-                saveCurrentState();
-                
                 setTimeout(() => {
                     saveBtn.innerText = originalText;
                     saveBtn.classList.remove('text-neon-cyan');
                 }, 1000);
             });
 
-            // Restore Action
+            // 5. Restore Button
             restoreBtn.addEventListener('click', () => {
                 windows.forEach(win => {
                     const state = savedState[win.id];
                     if (state) {
                         win.style.left = state.left;
                         win.style.top = state.top;
+                        win.style.width = state.width;
+                        win.style.height = state.height;
+                        win.style.display = state.display;
+                        updateDockDot(win.id, state.display !== 'none');
                     }
                 });
-                
-                // Flash effect on container
+
+                // Flash container
                 const originalShadow = container.style.boxShadow;
                 container.style.boxShadow = "0 0 20px rgba(0, 255, 255, 0.3)";
                 container.style.borderColor = "rgba(0, 255, 255, 0.5)";
-                
                 setTimeout(() => {
                     container.style.boxShadow = originalShadow;
-                    container.style.borderColor = ""; // Revert to class styles
+                    container.style.borderColor = ""; 
                 }, 500);
             });
         });
