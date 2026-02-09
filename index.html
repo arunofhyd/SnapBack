@@ -221,7 +221,10 @@
                     <div class="w-10"></div> <!-- Spacer -->
                 </div>
                 <div class="p-8 flex flex-col items-center justify-center min-h-[300px] text-center">
-                    <div id="demo-container" class="relative w-full max-w-sm aspect-video bg-black/50 rounded-lg border border-white/10 mb-6 overflow-hidden select-none">
+                    <div class="mb-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon-green/10 border border-neon-green/30 text-neon-green text-xs font-mono animate-pulse">
+                        <span class="w-2 h-2 rounded-full bg-neon-green"></span> Live Demo
+                    </div>
+                    <div id="demo-container" class="relative w-full max-w-3xl aspect-video bg-black/50 rounded-lg border border-white/10 mb-6 overflow-hidden select-none touch-none">
                         <!-- Draggable Window 1 -->
                         <div class="demo-window absolute w-24 h-16 bg-[#2a2a30] rounded shadow-lg border border-white/20 top-[20px] left-[20px] flex flex-col group" id="win1" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
                             <div class="window-header h-4 bg-white/10 rounded-t w-full flex items-center px-1.5 gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing">
@@ -517,58 +520,74 @@
                 const resizeHandle = win.querySelector('.resize-handle');
 
                 // Close Button
-                closeBtn.addEventListener('mousedown', (e) => {
-                    e.stopPropagation(); // Prevent drag start
+                const closeWindow = (e) => {
+                    e.stopPropagation(); 
+                    if (e.cancelable) e.preventDefault();
                     win.style.display = 'none';
                     updateDockDot(win.id, false);
-                });
+                };
+                closeBtn.addEventListener('mousedown', closeWindow);
+                closeBtn.addEventListener('touchstart', closeWindow, { passive: false });
 
                 // Drag Start (Header only)
-                header.addEventListener('mousedown', (e) => {
+                const startDrag = (e) => {
                     if (e.target.classList.contains('win-close')) return;
                     
                     isDragging = true;
                     activeElement = win;
                     bringToFront(win);
-                    win.style.transition = 'none'; // Disable transition for smooth drag
+                    win.style.transition = 'none';
 
-                    startX = e.clientX;
-                    startY = e.clientY;
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                    startX = clientX;
+                    startY = clientY;
                     
                     const style = window.getComputedStyle(win);
                     initialLeft = parseInt(style.left, 10) || 0;
                     initialTop = parseInt(style.top, 10) || 0;
                     
-                    e.preventDefault();
-                });
+                    if (e.cancelable) e.preventDefault();
+                };
+                header.addEventListener('mousedown', startDrag);
+                header.addEventListener('touchstart', startDrag, { passive: false });
 
                 // Resize Start
                 if (resizeHandle) {
-                    resizeHandle.addEventListener('mousedown', (e) => {
+                    const startResize = (e) => {
                         e.stopPropagation();
                         isResizing = true;
                         activeElement = win;
                         bringToFront(win);
                         win.style.transition = 'none';
 
-                        startX = e.clientX;
-                        startY = e.clientY;
+                        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                        startX = clientX;
+                        startY = clientY;
 
                         const style = window.getComputedStyle(win);
                         initialWidth = parseInt(style.width, 10) || 100;
                         initialHeight = parseInt(style.height, 10) || 100;
 
-                        e.preventDefault();
-                    });
+                        if (e.cancelable) e.preventDefault();
+                    };
+                    resizeHandle.addEventListener('mousedown', startResize);
+                    resizeHandle.addEventListener('touchstart', startResize, { passive: false });
                 }
             });
 
-            // Global Mouse Move (Drag & Resize)
-            document.addEventListener('mousemove', (e) => {
+            // Global Move (Drag & Resize)
+            const handleMove = (e) => {
                 if (!activeElement) return;
 
-                const dx = e.clientX - startX;
-                const dy = e.clientY - startY;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                const dx = clientX - startX;
+                const dy = clientY - startY;
 
                 if (isDragging) {
                     let newLeft = initialLeft + dx;
@@ -576,22 +595,28 @@
                     activeElement.style.left = `${newLeft}px`;
                     activeElement.style.top = `${newTop}px`;
                 } else if (isResizing) {
-                    let newWidth = Math.max(80, initialWidth + dx); // Min width 80
-                    let newHeight = Math.max(60, initialHeight + dy); // Min height 60
+                    let newWidth = Math.max(80, initialWidth + dx); 
+                    let newHeight = Math.max(60, initialHeight + dy); 
                     activeElement.style.width = `${newWidth}px`;
                     activeElement.style.height = `${newHeight}px`;
                 }
-            });
+                
+                if (e.cancelable) e.preventDefault(); // Prevent scrolling on mobile
+            };
+            document.addEventListener('mousemove', handleMove);
+            document.addEventListener('touchmove', handleMove, { passive: false });
 
-            // Global Mouse Up
-            document.addEventListener('mouseup', () => {
+            // Global Up
+            const handleUp = () => {
                 if (activeElement) {
                     activeElement.style.transition = 'all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)';
                     activeElement = null;
                 }
                 isDragging = false;
                 isResizing = false;
-            });
+            };
+            document.addEventListener('mouseup', handleUp);
+            document.addEventListener('touchend', handleUp);
 
             // 3. Dock Interactions
             dockIcons.forEach(icon => {
