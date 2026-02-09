@@ -224,43 +224,43 @@
                     <div class="mb-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon-green/10 border border-neon-green/30 text-neon-green text-xs font-mono animate-pulse">
                         <span class="w-2 h-2 rounded-full bg-neon-green"></span> Live Demo
                     </div>
-                    <div id="demo-container" class="relative w-full max-w-3xl aspect-video bg-black/50 rounded-lg border border-white/10 mb-6 overflow-hidden select-none touch-none">
+                    <div id="demo-container" class="relative w-full max-w-3xl h-[350px] md:h-auto md:aspect-video bg-black/50 rounded-lg border border-white/10 mb-6 overflow-hidden select-none touch-none">
                         <!-- Draggable Window 1 -->
                         <div class="demo-window absolute w-24 h-16 bg-[#2a2a30] rounded shadow-lg border border-white/20 top-[20px] left-[20px] flex flex-col group" id="win1" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
-                            <div class="window-header h-4 bg-white/10 rounded-t w-full flex items-center px-1.5 gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing">
-                                <div class="win-close w-2 h-2 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer"></div>
-                                <div class="w-2 h-2 rounded-full bg-[#ffbd2e]"></div>
-                                <div class="w-2 h-2 rounded-full bg-[#27c93f]"></div>
+                            <div class="window-header h-6 md:h-4 bg-white/10 rounded-t w-full flex items-center px-2 md:px-1.5 gap-1.5 md:gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing touch-manipulation">
+                                <div class="win-close w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer"></div>
+                                <div class="w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#ffbd2e]"></div>
+                                <div class="w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#27c93f]"></div>
                             </div>
                             <div class="flex-1 p-2 relative">
                                 <div class="w-full h-2 bg-white/10 rounded mb-1.5"></div>
                                 <div class="w-2/3 h-2 bg-white/10 rounded"></div>
                                 <!-- Resize Handle -->
-                                <div class="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <div class="w-1.5 h-1.5 border-r border-b border-white/30 rounded-br-[1px]"></div>
+                                <div class="resize-handle absolute bottom-0 right-0 w-6 h-6 md:w-4 md:h-4 cursor-se-resize flex items-end justify-end p-0.5 opacity-50 md:opacity-0 group-hover:opacity-100 transition-opacity touch-manipulation">
+                                    <div class="w-2 h-2 md:w-1.5 md:h-1.5 border-r border-b border-white/30 rounded-br-[1px]"></div>
                                 </div>
                             </div>
                         </div>
                         <!-- Draggable Window 2 -->
-                        <div class="demo-window absolute w-32 h-24 bg-[#1e1e24] rounded shadow-lg border border-white/20 top-[60px] left-[150px] flex flex-col group" id="win2" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
-                             <div class="window-header h-4 bg-white/10 rounded-t w-full flex items-center px-1.5 gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing">
-                                <div class="win-close w-2 h-2 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer"></div>
-                                <div class="w-2 h-2 rounded-full bg-[#ffbd2e]"></div>
-                                <div class="w-2 h-2 rounded-full bg-[#27c93f]"></div>
+                        <div class="demo-window absolute w-32 h-24 bg-[#1e1e24] rounded shadow-lg border border-white/20 top-[60px] left-[100px] md:left-[150px] flex flex-col group" id="win2" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                             <div class="window-header h-6 md:h-4 bg-white/10 rounded-t w-full flex items-center px-2 md:px-1.5 gap-1.5 md:gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing touch-manipulation">
+                                <div class="win-close w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer"></div>
+                                <div class="w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#ffbd2e]"></div>
+                                <div class="w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#27c93f]"></div>
                             </div>
                             <div class="flex-1 p-2 flex items-center justify-center relative">
                                  <div class="w-8 h-8 rounded-full border-2 border-neon-cyan/30 flex items-center justify-center pointer-events-none">
                                     <div class="w-1 h-3 bg-neon-cyan/50 rounded-full"></div>
                                  </div>
                                  <!-- Resize Handle -->
-                                <div class="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <div class="w-1.5 h-1.5 border-r border-b border-white/30 rounded-br-[1px]"></div>
+                                <div class="resize-handle absolute bottom-0 right-0 w-6 h-6 md:w-4 md:h-4 cursor-se-resize flex items-end justify-end p-0.5 opacity-50 md:opacity-0 group-hover:opacity-100 transition-opacity touch-manipulation">
+                                    <div class="w-2 h-2 md:w-1.5 md:h-1.5 border-r border-b border-white/30 rounded-br-[1px]"></div>
                                 </div>
                             </div>
                         </div>
                         <!-- Draggable Window 3 (Terminal) -->
-                        <div class="demo-window absolute w-28 h-20 bg-[#0f0f12] rounded shadow-lg border border-white/20 top-[90px] left-[40px] flex flex-col group" id="win3" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
-                            <div class="window-header h-4 bg-white/10 rounded-t w-full flex items-center px-1.5 gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing">
+                        <div class="demo-window absolute w-28 h-20 bg-[#0f0f12] rounded shadow-lg border border-white/20 top-[120px] md:top-[90px] left-[40px] flex flex-col group" id="win3" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                            <div class="window-header h-6 md:h-4 bg-white/10 rounded-t w-full flex items-center px-2 md:px-1.5 gap-1.5 md:gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing touch-manipulation">
                                 <div class="win-close w-2 h-2 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer"></div>
                                 <div class="w-2 h-2 rounded-full bg-[#ffbd2e]"></div>
                                 <div class="w-2 h-2 rounded-full bg-[#27c93f]"></div>
@@ -497,6 +497,21 @@
                 if (dot) dot.style.opacity = isVisible ? '1' : '0';
             }
 
+            // 0. Mobile Adjustment (Initial Layout)
+            function adjustForMobile() {
+                if (window.innerWidth < 640) {
+                    // Stagger windows vertically for mobile
+                    const win1 = document.getElementById('win1');
+                    const win2 = document.getElementById('win2');
+                    const win3 = document.getElementById('win3');
+                    
+                    if(win1) { win1.style.top = '10px'; win1.style.left = '10px'; }
+                    if(win2) { win2.style.top = '80px'; win2.style.left = '30px'; }
+                    if(win3) { win3.style.top = '150px'; win3.style.left = '50px'; }
+                }
+            }
+            adjustForMobile();
+
             // 1. Save Logic
             function saveCurrentState() {
                 windows.forEach(win => {
@@ -510,7 +525,7 @@
                     };
                 });
             }
-            // Save initial state immediately
+            // Save initial state immediately (after mobile adjustment)
             saveCurrentState();
 
             // 2. Window Interactions (Drag, Resize, Close)
