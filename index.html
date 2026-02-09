@@ -218,12 +218,36 @@
                     <div class="w-10"></div> <!-- Spacer -->
                 </div>
                 <div class="p-8 flex flex-col items-center justify-center min-h-[300px] text-center">
-                    <div class="w-full max-w-sm aspect-video bg-black/50 rounded-lg border border-white/10 mb-6 flex items-center justify-center text-gray-600">
-                        <span class="text-sm font-mono">[ Layout Preview Image ]</span>
+                    <div id="demo-container" class="relative w-full max-w-sm aspect-video bg-black/50 rounded-lg border border-white/10 mb-6 overflow-hidden">
+                        <!-- Draggable Window 1 -->
+                        <div class="demo-window absolute w-24 h-16 bg-[#2a2a30] rounded shadow-lg border border-white/20 top-[20px] left-[20px] cursor-grab active:cursor-grabbing flex flex-col group" id="win1" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                            <div class="h-4 bg-white/10 rounded-t w-full flex items-center px-1.5 gap-1 border-b border-white/5">
+                                <div class="w-2 h-2 rounded-full bg-[#ff5f56]"></div>
+                                <div class="w-2 h-2 rounded-full bg-[#ffbd2e]"></div>
+                                <div class="w-2 h-2 rounded-full bg-[#27c93f]"></div>
+                            </div>
+                            <div class="flex-1 p-2">
+                                <div class="w-full h-2 bg-white/10 rounded mb-1.5"></div>
+                                <div class="w-2/3 h-2 bg-white/10 rounded"></div>
+                            </div>
+                        </div>
+                        <!-- Draggable Window 2 -->
+                        <div class="demo-window absolute w-32 h-24 bg-[#1e1e24] rounded shadow-lg border border-white/20 top-[60px] left-[150px] cursor-grab active:cursor-grabbing flex flex-col group" id="win2" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                             <div class="h-4 bg-white/10 rounded-t w-full flex items-center px-1.5 gap-1 border-b border-white/5">
+                                <div class="w-2 h-2 rounded-full bg-[#ff5f56]"></div>
+                                <div class="w-2 h-2 rounded-full bg-[#ffbd2e]"></div>
+                                <div class="w-2 h-2 rounded-full bg-[#27c93f]"></div>
+                            </div>
+                            <div class="flex-1 p-2 flex items-center justify-center">
+                                 <div class="w-8 h-8 rounded-full border-2 border-neon-cyan/30 flex items-center justify-center">
+                                    <div class="w-1 h-3 bg-neon-cyan/50 rounded-full"></div>
+                                 </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="flex gap-3 w-full max-w-xs">
-                        <button class="flex-1 bg-white/10 py-2 rounded text-sm hover:bg-white/20 text-white transition">Restore</button>
-                        <button class="flex-1 bg-white/10 py-2 rounded text-sm hover:bg-white/20 text-white transition">Save New...</button>
+                        <button id="demo-restore-btn" class="flex-1 bg-white/10 py-2 rounded text-sm hover:bg-white/20 text-white transition">Restore</button>
+                        <button id="demo-save-btn" class="flex-1 bg-white/10 py-2 rounded text-sm hover:bg-white/20 text-white transition">Save New...</button>
                     </div>
                 </div>
             </div>
@@ -392,6 +416,117 @@
             // Clear text initially and start typing after a delay
             textElement.textContent = '';
             setTimeout(type, 500);
+        });
+
+        // Interactive Demo Script
+        document.addEventListener('DOMContentLoaded', () => {
+            const windows = document.querySelectorAll('.demo-window');
+            const container = document.getElementById('demo-container');
+            const saveBtn = document.getElementById('demo-save-btn');
+            const restoreBtn = document.getElementById('demo-restore-btn');
+            
+            if (!container || !saveBtn || !restoreBtn) return;
+
+            // Initial state
+            let savedState = {};
+            
+            // Save initial positions
+            function saveCurrentState() {
+                windows.forEach(win => {
+                    savedState[win.id] = {
+                        top: win.style.top,
+                        left: win.style.left
+                    };
+                });
+            }
+            saveCurrentState();
+
+            // Drag Logic
+            let isDragging = false;
+            let currentWin = null;
+            let startX, startY, initialLeft, initialTop;
+
+            windows.forEach(win => {
+                win.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    currentWin = win;
+                    
+                    // Disable transition during drag
+                    win.style.transition = 'none';
+                    
+                    // Bring to front
+                    windows.forEach(w => w.style.zIndex = 10);
+                    win.style.zIndex = 20;
+
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    
+                    // Parse current left/top (remove 'px')
+                    const style = window.getComputedStyle(win);
+                    initialLeft = parseInt(style.left, 10) || 0;
+                    initialTop = parseInt(style.top, 10) || 0;
+                    
+                    e.preventDefault(); // Prevent text selection
+                });
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging || !currentWin) return;
+
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+
+                let newLeft = initialLeft + dx;
+                let newTop = initialTop + dy;
+
+                // Apply positions (simplified boundaries)
+                currentWin.style.left = `${newLeft}px`;
+                currentWin.style.top = `${newTop}px`;
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging && currentWin) {
+                    // Re-enable transition
+                    currentWin.style.transition = 'all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)';
+                }
+                isDragging = false;
+                currentWin = null;
+            });
+
+            // Save Action
+            saveBtn.addEventListener('click', () => {
+                const originalText = saveBtn.innerText;
+                saveBtn.innerText = "Saved!";
+                saveBtn.classList.add('text-neon-cyan');
+                
+                saveCurrentState();
+                
+                setTimeout(() => {
+                    saveBtn.innerText = originalText;
+                    saveBtn.classList.remove('text-neon-cyan');
+                }, 1000);
+            });
+
+            // Restore Action
+            restoreBtn.addEventListener('click', () => {
+                windows.forEach(win => {
+                    const state = savedState[win.id];
+                    if (state) {
+                        win.style.left = state.left;
+                        win.style.top = state.top;
+                    }
+                });
+                
+                // Flash effect on container
+                const originalShadow = container.style.boxShadow;
+                container.style.boxShadow = "0 0 20px rgba(0, 255, 255, 0.3)";
+                container.style.borderColor = "rgba(0, 255, 255, 0.5)";
+                
+                setTimeout(() => {
+                    container.style.boxShadow = originalShadow;
+                    container.style.borderColor = ""; // Revert to class styles
+                }, 500);
+            });
         });
     </script>
 </body>
