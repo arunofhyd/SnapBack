@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# --- CONFIGURATION ---
+APP_VERSION="1.0"
+APP_NAME="Snap Back v$APP_VERSION"
+
 # --- CYBERPUNK THEME COLORS ---
 BOLD='\033[1m'
 # Neon Palette (256-color)
@@ -238,11 +242,11 @@ printf "   ${NEON_GREEN}✔ Assets Compiled (New Logo).${NC}\n\n"
 
 # --- STEP 3: BUNDLE STRUCTURE ---
 show_step 3 "Constructing Application Bundle..."
-mkdir -p "Snap Back.app/Contents/MacOS"
-mkdir -p "Snap Back.app/Contents/Resources"
-mv AppIcon.icns "Snap Back.app/Contents/Resources/"
+mkdir -p "$APP_NAME.app/Contents/MacOS"
+mkdir -p "$APP_NAME.app/Contents/Resources"
+mv AppIcon.icns "$APP_NAME.app/Contents/Resources/"
 
-cat > "Snap Back.app/Contents/Info.plist" <<'EOF'
+cat > "$APP_NAME.app/Contents/Info.plist" <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -252,13 +256,13 @@ cat > "Snap Back.app/Contents/Info.plist" <<'EOF'
     <key>CFBundleIdentifier</key>
     <string>com.snapback.app</string>
     <key>CFBundleName</key>
-    <string>Snap Back</string>
+    <string>__APP_NAME__</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleShortVersionString</key>
-    <string>5.3</string>
+    <string>__APP_VERSION__</string>
     <key>CFBundleVersion</key>
-    <string>53</string>
+    <string>1</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>LSMinimumSystemVersion</key>
@@ -266,10 +270,15 @@ cat > "Snap Back.app/Contents/Info.plist" <<'EOF'
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Snap Back needs to control other applications to save and restore window layouts.</string>
+    <string>__APP_NAME__ needs to control other applications to save and restore window layouts.</string>
 </dict>
 </plist>
 EOF
+
+# Inject Version and Name into Info.plist
+sed -i '' "s/__APP_VERSION__/$APP_VERSION/g" "$APP_NAME.app/Contents/Info.plist"
+sed -i '' "s/__APP_NAME__/$APP_NAME/g" "$APP_NAME.app/Contents/Info.plist"
+
 printf "   ${NEON_GREEN}✔ Info.plist injected.${NC}\n\n"
 
 # --- STEP 4: SOURCE INJECTION ---
@@ -278,7 +287,7 @@ cat > SnapBack.swift <<'EOF'
 import Cocoa
 
 // --- CONFIGURATION ---
-let appTitle = "Snap Back"
+let appTitle = "__APP_NAME__"
 let fileManager = FileManager.default
 let home = fileManager.homeDirectoryForCurrentUser
 let storageFolder = home.appendingPathComponent("Pictures/Snap Back Profiles")
@@ -319,7 +328,7 @@ func getSavedProfiles() -> [String] {
 
 func showSuccess(message: String) {
     NSSound(named: "Glass")?.play()
-    let script = "display notification \"\(message)\" with title \"Snap Back\""
+    let script = "display notification \"\(message)\" with title \"__APP_NAME__\""
     let _ = runAppleScript(script)
 }
 
@@ -334,7 +343,7 @@ func showError(message: String) {
 func showScriptError(details: String?) {
     let alert = NSAlert()
     alert.messageText = "Operation Failed"
-    var info = "Snap Back encountered an error."
+    var info = "__APP_NAME__ encountered an error."
     if let d = details { info += "\n\nError: \(d)" }
     
     // Check for permissions
@@ -356,6 +365,52 @@ func showScriptError(details: String?) {
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")!
         NSWorkspace.shared.open(url)
     }
+}
+
+func checkForUpdates() {
+    guard let url = URL(string: "https://snapbackapp.vercel.app/script.sh") else { return }
+    let task = URLSession.shared.dataTask(with: url) { data, response, error in
+        guard let data = data, let scriptContent = String(data: data, encoding: .utf8) else { return }
+
+        // Regex to extract version
+        let pattern = "APP_VERSION=\"([^\"]+)\""
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return }
+        let nsString = scriptContent as NSString
+        let results = regex.matches(in: scriptContent, options: [], range: NSRange(location: 0, length: nsString.length))
+
+        guard let match = results.first, match.range.location != NSNotFound,
+              let currentVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else { return }
+
+        let remoteVer = nsString.substring(with: match.range(at: 1))
+
+        let rComponents = remoteVer.split(separator: ".").compactMap { Int($0) }
+        let cComponents = currentVer.split(separator: ".").compactMap { Int($0) }
+
+        var updateAvailable = false
+        for i in 0..<max(rComponents.count, cComponents.count) {
+            let r = i < rComponents.count ? rComponents[i] : 0
+            let c = i < cComponents.count ? cComponents[i] : 0
+            if r > c { updateAvailable = true; break }
+            if r < c { break }
+        }
+
+        if updateAvailable {
+            DispatchQueue.main.async {
+                let alert = NSAlert()
+                alert.messageText = "Update Available"
+                alert.informativeText = "A new version (v\(remoteVer)) is available. You are on v\(currentVer)."
+                alert.addButton(withTitle: "Get Update")
+                alert.addButton(withTitle: "Later")
+
+                if alert.runModal() == .alertFirstButtonReturn {
+                    if let url = URL(string: "https://snapbackapp.vercel.app") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+            }
+        }
+    }
+    task.resume()
 }
 
 func checkFirstRun() {
@@ -389,7 +444,7 @@ func checkFirstRun() {
             defer: false
         )
         window.center()
-        window.title = "Snap Back"
+        window.title = "__APP_NAME__"
         
         let contentView = NSView(frame: NSRect(x: 0, y: 0, width: winWidth, height: winHeight))
         window.contentView = contentView
@@ -400,14 +455,14 @@ func checkFirstRun() {
         contentView.addSubview(iconView)
         
         // Title (Right of Icon)
-        let titleLabel = NSTextField(labelWithString: "Welcome to Snap Back v1.0")
+        let titleLabel = NSTextField(labelWithString: "Welcome to __APP_NAME__")
         titleLabel.font = NSFont.boldSystemFont(ofSize: 18)
         titleLabel.frame = NSRect(x: 110, y: winHeight - 65, width: 350, height: 26)
         contentView.addSubview(titleLabel)
         
         // Description (Main Body)
         let descLabel = NSTextField(labelWithString: "")
-        descLabel.stringValue = "To save and restore window layouts, this app requires:\n\n• Accessibility: To move/resize windows.\n• Screen Recording: To capture layout previews.\n\nPlease enable these in System Settings (requires Admin privileges).\n\n⚠️ If already checked: Please remove (-) and re-add (+) Snap Back in System Settings under Accessibility and Screen Recording to reset permissions after an app update."
+        descLabel.stringValue = "To save and restore window layouts, this app requires:\n\n• Accessibility: To move/resize windows.\n• Screen Recording: To capture layout previews.\n\nPlease enable these in System Settings (requires Admin privileges).\n\n⚠️ If already checked: Please remove (-) and re-add (+) __APP_NAME__ in System Settings under Accessibility and Screen Recording to reset permissions after an app update."
         descLabel.font = NSFont.systemFont(ofSize: 13)
         // Adjusted Frame to fit text without clipping
         descLabel.frame = NSRect(x: 35, y: 110, width: 420, height: 190)
@@ -545,7 +600,7 @@ func checkFirstRun() {
 
 func showHelp() {
     let alert = NSAlert()
-    alert.messageText = "How to Use Snap Back"
+    alert.messageText = "How to Use __APP_NAME__"
     
     let helpViewWidth: CGFloat = 520
     let helpViewHeight: CGFloat = 430
@@ -648,13 +703,13 @@ addHeader("Required Permissions", icon: "🔐")
     addDetailedItem("1. Accessibility", [
         "- Required to move and resize windows.",
         "- Go to Privacy & Security > Accessibility.",
-        "- Click '+' (or allow in list) to add 'Snap Back'."
+        "- Click '+' (or allow in list) to add '__APP_NAME__'."
     ])
     
     addDetailedItem("2. Screen Recording", [
         "- Required to save screenshot previews.",
         "- Go to Privacy & Security > Screen Recording.",
-        "- Click '+' (or allow in list) to add 'Snap Back'."
+        "- Click '+' (or allow in list) to add '__APP_NAME__'."
     ])
     
     addDetailedItem("3. Automation", [
@@ -663,7 +718,7 @@ addHeader("Required Permissions", icon: "🔐")
     ])
     
     addHeader("Troubleshooting", icon: "🛠")
-    addBody("If a window fails to move, remove Snap Back from Privacy & Security settings and re-add it to reset permissions.")
+    addBody("If a window fails to move, remove __APP_NAME__ from Privacy & Security settings and re-add it to reset permissions.")
     addHeader("Capture State", icon: "📸")
     addBody("Click 'Save New...' to instantly record the geometry & state of any open app window and browser tab. This tool is designed for Power Users.")
     
@@ -780,7 +835,7 @@ func saveProfile(name: String) -> Bool {
         repeat with proc in processList
             try
                 set appName to name of proc
-                if appName is not "Snap Back" and appName is not "app_mode_loader" and appName is not "ControlCenter" then
+                if appName is not "__APP_NAME__" and appName is not "app_mode_loader" and appName is not "ControlCenter" then
                     tell proc
                         set allWindows to every window
                         repeat with i from 1 to count of allWindows
@@ -903,7 +958,7 @@ func restoreProfile(name: String) {
         set windowPositions to mainData of loadedScript
         
         tell application "System Events"
-            set visible of (every process where visible is true and name is not "Snap Back") to false
+            set visible of (every process where visible is true and name is not "__APP_NAME__") to false
         end tell
         delay 0.5
         
@@ -987,7 +1042,7 @@ let app = NSApplication.shared
 app.setActivationPolicy(.regular)
 
 let alert = NSAlert()
-alert.messageText = "\(appTitle) v1.0"
+alert.messageText = "\(appTitle) v__APP_VERSION__"
 alert.informativeText = "Instantly save and restore your workspace, Never lose your layout again."
 alert.addButton(withTitle: "Restore")
 alert.addButton(withTitle: "Save New...")
@@ -1097,6 +1152,7 @@ app.finishLaunching()
 app.activate(ignoringOtherApps: true)
 
 checkFirstRun()
+checkForUpdates()
 
 // --- LOOP ---
 while true {
@@ -1138,13 +1194,18 @@ while true {
     else { showHelp() }
 }
 EOF
+
+# Inject Version and Name into Swift Source
+sed -i '' "s/__APP_VERSION__/$APP_VERSION/g" SnapBack.swift
+sed -i '' "s/__APP_NAME__/$APP_NAME/g" SnapBack.swift
+
 printf "   ${NEON_GREEN}✔ Core Logic Integrated.${NC}\n\n"
 
 # --- STEP 5: COMPILATION & CLEANUP ---
 show_step 5 "Compiling Binary Executable..."
 
 (
-swiftc SnapBack.swift -o "Snap Back.app/Contents/MacOS/SnapBack"
+swiftc SnapBack.swift -o "$APP_NAME.app/Contents/MacOS/SnapBack"
 ) &
 show_spinner $!
 
@@ -1154,23 +1215,23 @@ if [ $? -eq 0 ]; then
     show_step 6 "Finalizing and Signing..."
     
     # Ensure binary is executable
-    chmod +x "Snap Back.app/Contents/MacOS/SnapBack"
-    chmod +x "Snap Back.app/Contents/Resources"
+    chmod +x "$APP_NAME.app/Contents/MacOS/SnapBack"
+    chmod +x "$APP_NAME.app/Contents/Resources"
     
     # --- Ad-Hoc Signing ---
     printf "   ${TXT_GREY}Applying local signature...${NC} "
-    codesign --force --deep -s - "Snap Back.app" &>/dev/null
+    codesign --force --deep -s - "$APP_NAME.app" &>/dev/null
     printf "${NEON_GREEN}Secure.${NC}\n"
     
     # Return to previous directory
     popd > /dev/null
     
     # Move app to Desktop (Replace existing)
-    if [ -d "$DEST_DIR/Snap Back.app" ]; then
-        rm -rf "$DEST_DIR/Snap Back.app"
+    if [ -d "$DEST_DIR/$APP_NAME.app" ]; then
+        rm -rf "$DEST_DIR/$APP_NAME.app"
     fi
     
-    mv "$BUILD_DIR/Snap Back.app" "$DEST_DIR/"
+    mv "$BUILD_DIR/$APP_NAME.app" "$DEST_DIR/"
     
     # Clean up temp dir
     rm -rf "$BUILD_DIR"
@@ -1179,7 +1240,7 @@ if [ $? -eq 0 ]; then
     show_success_art
     print_line
     printf "\n"
-    printf "   ${NEON_CYAN}DEPLOYMENT COMPLETE:${NC} Snap Back.app is now on your Desktop.\n"
+    printf "   ${NEON_CYAN}DEPLOYMENT COMPLETE:${NC} $APP_NAME.app is now on your Desktop.\n"
     printf "   ${NEON_PURPLE}SUGGESTION:${NC} Drag to Applications and assign launch shortcut.\n"
     printf "   ${TXT_GREY}EXECUTION TIME: $(date +%T)${NC}\n"
     printf "\n"
@@ -1187,7 +1248,7 @@ if [ $? -eq 0 ]; then
     afplay /System/Library/Sounds/Glass.aiff 2>/dev/null || tput bel
     
     # Trigger System Notification
-    osascript -e 'display notification "Snap Back has been successfully installed to your Desktop." with title "Installation Complete"' &>/dev/null
+    osascript -e "display notification \"$APP_NAME has been successfully installed to your Desktop.\" with title \"Installation Complete\"" &>/dev/null
 else
     show_failure_art
     printf "\n"
