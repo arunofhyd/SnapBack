@@ -10,21 +10,19 @@
     <meta name="keywords" content="macOS layout saver, window manager mac, workspace manager, restore window positions, snap windows, productivity tool, safari tab saver, free mac utility">
     <meta name="author" content="Arun Thomas">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://snapbackapp.vercel.com/">
+    <link rel="canonical" href="https://snapbackapp.vercel.app/">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://snapbackapp.vercel.com/">
+    <meta property="og:url" content="https://snapbackapp.vercel.app/">
     <meta property="og:title" content="Snap Back | macOS Layout Saver">
     <meta property="og:description" content="Never lose a window layout again. Instantly save and restore windows and browser tabs on macOS. Privacy-focused and free.">
-    <meta property="og:image" content="https://snapbackapp.vercel.com/og-image.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://snapbackapp.vercel.com/">
+    <meta property="twitter:url" content="https://snapbackapp.vercel.app/">
     <meta property="twitter:title" content="Snap Back | macOS Layout Saver">
     <meta property="twitter:description" content="Never lose a window layout again. Instantly save and restore windows and browser tabs on macOS.">
-    <meta property="twitter:image" content="https://snapbackapp.vercel.com/og-image.png">
 
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json">
@@ -49,7 +47,7 @@
     </script>
 
     <!-- Dynamic Favicon -->
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="/logo.svg" type="image/svg+xml">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -155,7 +153,7 @@
                     <!-- Arrow Head -->
                     <path d="M394 682L393 527L343 621L241 655Z" fill="#00ffff"/>
                 </svg>
-                <span class="font-bold text-xl tracking-tight text-white">Snap Back</span>
+                <span class="font-bold text-xl tracking-tight text-white dynamic-app-name">Snap Back</span>
             </div>
             <div class="hidden md:flex gap-8 text-sm font-medium text-gray-400">
                 <a href="#features" class="hover:text-neon-cyan transition-colors">Features</a>
@@ -171,9 +169,42 @@
 
     <!-- Hero Section -->
     <section class="pt-24 pb-20 px-6 max-w-7xl mx-auto text-center">
-        <div class="version-pill inline-block px-3 py-1 mb-6 rounded-full bg-neon-purple/10 border border-neon-purple/30 text-neon-purple text-xs font-mono">
-            v1.0 Now Available
+        <div id="version-pill" class="version-pill inline-block px-3 py-1 mb-6 rounded-full bg-neon-purple/10 border border-neon-purple/30 text-neon-purple text-xs font-mono">
+            Latest Version
         </div>
+        <script>
+            // Fetch version and app name from script.sh
+            fetch('/script.sh')
+                .then(response => response.text())
+                .then(text => {
+                    // Extract Version
+                    const verMatch = text.match(/APP_VERSION="([^"]+)"/);
+                    const version = (verMatch && verMatch[1]) ? verMatch[1] : null;
+
+                    if (version) {
+                        const pill = document.getElementById('version-pill');
+                        if (pill) pill.textContent = `v${version} Now Available`;
+                    }
+
+                    // Extract App Name
+                    const nameMatch = text.match(/APP_NAME="([^"]+)"/);
+                    let appName = (nameMatch && nameMatch[1]) ? nameMatch[1] : null;
+
+                    if (appName && version) {
+                        // Substitute variable
+                        appName = appName.replace('$APP_VERSION', version);
+
+                        // Update all placeholders
+                        document.querySelectorAll('.dynamic-app-name').forEach(el => {
+                            el.textContent = appName;
+                        });
+
+                        // Update Title
+                        document.title = `${appName} | macOS Window Layout Saver & Manager`;
+                    }
+                })
+                .catch(console.error);
+        </script>
         <h1 class="text-5xl md:text-7xl font-bold mb-6 tracking-tight min-h-[200px] md:min-h-0 md:block md:whitespace-nowrap">
             Never Lose <br>
             <span id="typing-text" class="gradient-text typing-cursor">a Window Layout</span>Again.
@@ -290,7 +321,7 @@
     <!-- Features Grid -->
     <section id="features" class="py-20 bg-black/20">
         <div class="max-w-6xl mx-auto px-6">
-            <h2 class="text-3xl font-bold mb-12 text-center">Why use Snap Back?</h2>
+            <h2 class="text-3xl font-bold mb-12 text-center">Why use <span class="dynamic-app-name">Snap Back</span>?</h2>
             <div class="grid md:grid-cols-3 gap-8">
                 <!-- Feature 1 -->
                 <div class="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-neon-cyan/50 transition-colors">
@@ -332,7 +363,7 @@
                     <div class="flex-shrink-0 w-12 h-12 rounded-full bg-neon-cyan text-black flex items-center justify-center font-bold text-lg">2</div>
                     <div>
                         <h3 class="text-xl font-bold mb-2 text-neon-cyan">Capture State</h3>
-                        <p class="text-gray-400">Open Snap Back and click <strong>"Save New..."</strong>. Name your profile (e.g., "Coding", "Trading", "Design").</p>
+                        <p class="text-gray-400">Open <span class="dynamic-app-name">Snap Back</span> and click <strong>"Save New..."</strong>. Name your profile (e.g., "Coding", "Trading", "Design").</p>
                     </div>
                 </div>
                 <!-- Step 3 -->
@@ -369,7 +400,7 @@
     <section id="setup" class="py-20 bg-neon-panel border-b border-white/5">
         <div class="max-w-4xl mx-auto px-6">
             <h2 class="text-3xl font-bold mb-6 text-center">Important Setup</h2>
-            <p class="text-center text-gray-400 mb-12">macOS requires explicit permissions to control windows. Snap Back needs these 3 to function.</p>
+            <p class="text-center text-gray-400 mb-12">macOS requires explicit permissions to control windows. <span class="dynamic-app-name">Snap Back</span> needs these 3 to function.</p>
             
             <div class="bg-black/30 p-8 rounded-xl border border-white/10 font-mono text-sm space-y-6">
                 <div class="flex items-start gap-4">
@@ -406,7 +437,7 @@
             <button onclick="copyEmail(this)" class="hover:text-neon-cyan transition-colors bg-transparent border-none cursor-pointer">Contact Developer</button>
         </div>
         <div class="text-xs text-gray-700">
-            &copy; 2026 Snap Back. All rights reserved.
+            &copy; 2026 <span class="dynamic-app-name">Snap Back</span>. All rights reserved.
         </div>
     </footer>
 
