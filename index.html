@@ -244,10 +244,10 @@
                     <div id="demo-container" class="relative w-full max-w-3xl h-[350px] md:h-auto md:aspect-video bg-black/50 rounded-lg border border-white/10 mb-6 overflow-hidden select-none touch-none">
                         <!-- Draggable Window 1 -->
                         <div class="demo-window absolute w-24 h-16 bg-[#2a2a30] rounded shadow-lg border border-white/20 top-[20px] left-[20px] flex flex-col group" id="win1" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
-                            <div class="window-header h-6 md:h-4 bg-white/10 rounded-t w-full flex items-center px-2 md:px-1.5 gap-1.5 md:gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing touch-manipulation">
+                            <div class="window-header h-6 md:h-4 bg-white/10 rounded-t w-full flex-shrink-0 flex items-center px-2 md:px-1.5 gap-1.5 md:gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing touch-manipulation">
                                 <div class="win-close w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer"></div>
-                                <div class="w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#ffbd2e]"></div>
-                                <div class="w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#27c93f]"></div>
+                                <div class="win-minimize w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#ffbd2e] hover:bg-[#ffbd2e]/80 cursor-pointer"></div>
+                                <div class="win-maximize w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#27c93f] hover:bg-[#27c93f]/80 cursor-pointer"></div>
                             </div>
                             <div class="flex-1 p-2 relative">
                                 <div class="w-full h-2 bg-white/10 rounded mb-1.5"></div>
@@ -260,10 +260,10 @@
                         </div>
                         <!-- Draggable Window 2 -->
                         <div class="demo-window absolute w-32 h-24 bg-[#1e1e24] rounded shadow-lg border border-white/20 top-[60px] left-[100px] md:left-[150px] flex flex-col group" id="win2" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
-                             <div class="window-header h-6 md:h-4 bg-white/10 rounded-t w-full flex items-center px-2 md:px-1.5 gap-1.5 md:gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing touch-manipulation">
+                             <div class="window-header h-6 md:h-4 bg-white/10 rounded-t w-full flex-shrink-0 flex items-center px-2 md:px-1.5 gap-1.5 md:gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing touch-manipulation">
                                 <div class="win-close w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer"></div>
-                                <div class="w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#ffbd2e]"></div>
-                                <div class="w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#27c93f]"></div>
+                                <div class="win-minimize w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#ffbd2e] hover:bg-[#ffbd2e]/80 cursor-pointer"></div>
+                                <div class="win-maximize w-2.5 h-2.5 md:w-2 md:h-2 rounded-full bg-[#27c93f] hover:bg-[#27c93f]/80 cursor-pointer"></div>
                             </div>
                             <div class="flex-1 p-2 flex items-center justify-center relative">
                                  <div class="w-8 h-8 rounded-full border-2 border-neon-cyan/30 flex items-center justify-center pointer-events-none">
@@ -277,10 +277,10 @@
                         </div>
                         <!-- Draggable Window 3 (Terminal) -->
                         <div class="demo-window absolute w-28 h-20 bg-[#0f0f12] rounded shadow-lg border border-white/20 top-[120px] md:top-[90px] left-[40px] flex flex-col group" id="win3" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
-                            <div class="window-header h-6 md:h-4 bg-white/10 rounded-t w-full flex items-center px-2 md:px-1.5 gap-1.5 md:gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing touch-manipulation">
+                            <div class="window-header h-6 md:h-4 bg-white/10 rounded-t w-full flex-shrink-0 flex items-center px-2 md:px-1.5 gap-1.5 md:gap-1 border-b border-white/5 cursor-grab active:cursor-grabbing touch-manipulation">
                                 <div class="win-close w-2 h-2 rounded-full bg-[#ff5f56] hover:bg-[#ff5f56]/80 cursor-pointer"></div>
-                                <div class="w-2 h-2 rounded-full bg-[#ffbd2e]"></div>
-                                <div class="w-2 h-2 rounded-full bg-[#27c93f]"></div>
+                                <div class="win-minimize w-2 h-2 rounded-full bg-[#ffbd2e] hover:bg-[#ffbd2e]/80 cursor-pointer"></div>
+                                <div class="win-maximize w-2 h-2 rounded-full bg-[#27c93f] hover:bg-[#27c93f]/80 cursor-pointer"></div>
                             </div>
                             <div class="flex-1 p-2 font-mono text-[6px] text-neon-green leading-tight overflow-hidden relative">
                                 <span class="text-neon-cyan">~</span> $ echo "Hello"<br>Hello<br><span class="text-neon-cyan">~</span> <span class="animate-pulse">_</span>
@@ -501,11 +501,12 @@
             let isResizing = false;
             let activeElement = null;
             let startX, startY, initialLeft, initialTop, initialWidth, initialHeight;
+            let zIndexCounter = 20;
 
             // Helper: Bring window to front
             function bringToFront(win) {
-                windows.forEach(w => w.style.zIndex = 10);
-                win.style.zIndex = 20;
+                zIndexCounter++;
+                win.style.zIndex = zIndexCounter;
             }
 
             // Helper: Update Dock Dot
@@ -547,8 +548,15 @@
 
             // 2. Window Interactions (Drag, Resize, Close)
             windows.forEach(win => {
+                // Global click to bring to front
+                const focusWindow = () => bringToFront(win);
+                win.addEventListener('mousedown', focusWindow);
+                win.addEventListener('touchstart', focusWindow, { passive: true });
+
                 const header = win.querySelector('.window-header');
                 const closeBtn = win.querySelector('.win-close');
+                const minBtn = win.querySelector('.win-minimize');
+                const maxBtn = win.querySelector('.win-maximize');
                 const resizeHandle = win.querySelector('.resize-handle');
 
                 // Close Button
@@ -560,6 +568,51 @@
                 };
                 closeBtn.addEventListener('mousedown', closeWindow);
                 closeBtn.addEventListener('touchstart', closeWindow, { passive: false });
+
+                // Minimize Button
+                if (minBtn) {
+                    minBtn.addEventListener('mousedown', closeWindow); // Same behavior as close for demo
+                    minBtn.addEventListener('touchstart', closeWindow, { passive: false });
+                }
+
+                // Maximize Button
+                if (maxBtn) {
+                    const toggleMaximize = (e) => {
+                        e.stopPropagation();
+                        if (e.cancelable) e.preventDefault();
+
+                        bringToFront(win);
+
+                        if (win.classList.contains('maximized')) {
+                            // Restore
+                            win.classList.remove('maximized');
+                            const saved = win.dataset.preMaxState ? JSON.parse(win.dataset.preMaxState) : null;
+                            if (saved) {
+                                win.style.top = saved.top;
+                                win.style.left = saved.left;
+                                win.style.width = saved.width;
+                                win.style.height = saved.height;
+                            }
+                        } else {
+                            // Maximize
+                            const style = window.getComputedStyle(win);
+                            win.dataset.preMaxState = JSON.stringify({
+                                top: win.style.top || style.top,
+                                left: win.style.left || style.left,
+                                width: win.style.width || style.width,
+                                height: win.style.height || style.height
+                            });
+
+                            win.classList.add('maximized');
+                            win.style.top = '0';
+                            win.style.left = '0';
+                            win.style.width = '100%';
+                            win.style.height = '100%';
+                        }
+                    };
+                    maxBtn.addEventListener('mousedown', toggleMaximize);
+                    maxBtn.addEventListener('touchstart', toggleMaximize, { passive: false });
+                }
 
                 // Drag Start (Header only)
                 const startDrag = (e) => {

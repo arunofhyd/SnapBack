@@ -1042,7 +1042,7 @@ let app = NSApplication.shared
 app.setActivationPolicy(.regular)
 
 let alert = NSAlert()
-alert.messageText = "\(appTitle) v__APP_VERSION__"
+alert.messageText = appTitle
 alert.informativeText = "Instantly save and restore your workspace, Never lose your layout again."
 alert.addButton(withTitle: "Restore")
 alert.addButton(withTitle: "Save New...")
