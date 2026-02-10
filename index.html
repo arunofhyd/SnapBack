@@ -191,16 +191,19 @@
                     let appName = (nameMatch && nameMatch[1]) ? nameMatch[1] : null;
 
                     if (appName && version) {
-                        // Substitute variable
+                        // Substitute variable to get full bundle name (e.g. "Snap Back v1.0")
                         appName = appName.replace('$APP_VERSION', version);
+
+                        // Create Clean Name for website display (Remove " v1.0")
+                        const cleanName = appName.replace(` v${version}`, '');
 
                         // Update all placeholders
                         document.querySelectorAll('.dynamic-app-name').forEach(el => {
-                            el.textContent = appName;
+                            el.textContent = cleanName;
                         });
 
                         // Update Title
-                        document.title = `${appName} | macOS Window Layout Saver & Manager`;
+                        document.title = `${cleanName} | macOS Window Layout Saver & Manager`;
                     }
                 })
                 .catch(console.error);
