@@ -838,8 +838,19 @@ func restoreProfile(name: String) {
     on restoreSafari(urlList)
         try
             tell application "Safari"
+                set shouldReuse to false
+                if (count of windows) = 0 then
+                    make new document
+                    set shouldReuse to true
+                else if (count of windows) = 1 then
+                     try
+                        if not (exists URL of document 1) or (URL of document 1 is "") then set shouldReuse to true
+                     end try
+                end if
+                
+                if not shouldReuse then make new document
+                
                 if (count of urlList) > 0 then
-                    if not (exists document 1) then make new document
                     set URL of document 1 to (item 1 of urlList)
                     if (count of urlList) > 1 then
                         repeat with k from 2 to count of urlList
@@ -900,35 +911,13 @@ func restoreProfile(name: String) {
         set screenW to item 3 of screenBounds
         set screenH to item 4 of screenBounds
         
-        -- Phase 1: Launch & Open Tabs
+        -- MERGED RESTORATION LOOP
         repeat with winRecord in windowPositions
             set appName to procName of winRecord
             set urlList to savedUrls of winRecord
+            set rawIndex to winIndex of winRecord
             
-            try
-                -- Activate generic app (no dictionary needed)
-                tell application appName to activate
-                delay 1
-                
-                -- Delegate specific logic to Handlers
-                if appName is "Safari" then
-                      my restoreSafari(urlList)
-                      
-                else if appName is in chromiumVariants then
-                      my restoreChrome(appName, urlList)
-                      
-                else if appName is "Firefox" then
-                      my restoreFirefox(appName, urlList)
-                end if
-            end try
-        end repeat
-        
-        delay 2
-        
-        -- Phase 2: Restore Geometry
-        repeat with winRecord in windowPositions
-            set appName to procName of winRecord
-            
+            -- Geometry Calcs
             set relPos to relPos of winRecord
             set relSize to relSize of winRecord
             set relX to item 1 of relPos
@@ -947,11 +936,29 @@ func restoreProfile(name: String) {
             set targetPos to {targetX, targetY}
             set targetSize to {targetW, targetH}
             
-            set rawIndex to winIndex of winRecord
-
             try
+                -- 1. Activate & Restore Content
+                tell application appName to activate
+                delay 0.2
+                
+                if appName is "Safari" then
+                      my restoreSafari(urlList)
+                      delay 0.5 -- Allow window creation
+                else if appName is in chromiumVariants then
+                      my restoreChrome(appName, urlList)
+                      delay 0.5
+                else if appName is "Firefox" then
+                      my restoreFirefox(appName, urlList)
+                      delay 0.5
+                else
+                      -- Generic App: Just wait
+                      delay 0.2
+                end if
+                
+                -- 2. Restore Geometry
                 tell application "System Events" to tell process appName
                     set targetIndex to rawIndex
+                    -- For browsers, target the frontmost window (Window 1) as we just created/touched it
                     if (appName is "Safari" or appName is "Firefox" or appName is in chromiumVariants) then set targetIndex to 1
                     
                     repeat 3 times
