@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "changelog": [
+    {
+      "version": "v1.0",
+      "date": "2026-02-10",
+      "changes": [
+        "Initial Release",
+        "Window Layout Saving & Restoration",
+        "Smart Browser Tab Restoration (Safari, Chrome, Arc, etc.)",
+        "Privacy-First Local Storage"
+      ]
+    }
+  ]
+}
