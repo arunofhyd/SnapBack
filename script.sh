@@ -368,20 +368,12 @@ func showScriptError(details: String?) {
 }
 
 func checkForUpdates() {
-    guard let url = URL(string: "https://snapbackapp.vercel.app/script.sh") else { return }
+    guard let url = URL(string: "https://snapbackapp.vercel.app/version.json") else { return }
     let task = URLSession.shared.dataTask(with: url) { data, response, error in
-        guard let data = data, let scriptContent = String(data: data, encoding: .utf8) else { return }
-
-        // Regex to extract version
-        let pattern = "APP_VERSION=\"([^\"]+)\""
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return }
-        let nsString = scriptContent as NSString
-        let results = regex.matches(in: scriptContent, options: [], range: NSRange(location: 0, length: nsString.length))
-
-        guard let match = results.first, match.range.location != NSNotFound,
+        guard let data = data,
+              let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+              let remoteVer = json["version"] as? String,
               let currentVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else { return }
-
-        let remoteVer = nsString.substring(with: match.range(at: 1))
 
         let rComponents = remoteVer.split(separator: ".").compactMap { Int($0) }
         let cComponents = currentVer.split(separator: ".").compactMap { Int($0) }
@@ -395,18 +387,55 @@ func checkForUpdates() {
         }
 
         if updateAvailable {
+            var fullChangelog = ""
+            if let changes = json["changelog"] as? [[String: Any]] {
+                // Find changelog entry matching the version (handling optional 'v' prefix)
+                if let entry = changes.first(where: { ($0["version"] as? String)?.replacingOccurrences(of: "v", with: "") == remoteVer }),
+                   let notes = entry["changes"] as? [String] {
+                    fullChangelog = notes.map { "• \($0)" }.joined(separator: "\n")
+                }
+            }
+            
             DispatchQueue.main.async {
-                let alert = NSAlert()
-                alert.messageText = "Update Available"
-                alert.informativeText = "A new version (v\(remoteVer)) is available. You are on v\(currentVer)."
-                alert.addButton(withTitle: "Get Update")
-                alert.addButton(withTitle: "Later")
-
-                if alert.runModal() == .alertFirstButtonReturn {
-                    if let url = URL(string: "https://snapbackapp.vercel.app") {
-                        NSWorkspace.shared.open(url)
+                func showUpdateAlert(showChangelog: Bool) {
+                    let alert = NSAlert()
+                    alert.messageText = "Update Available"
+                    alert.informativeText = "A new version (v\(remoteVer)) is available. You are on v\(currentVer)."
+                    
+                    if showChangelog && !fullChangelog.isEmpty {
+                        let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 300, height: 200))
+                        scrollView.hasVerticalScroller = true
+                        scrollView.drawsBackground = false
+                        
+                        let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 300, height: 200))
+                        textView.isEditable = false
+                        textView.drawsBackground = false
+                        textView.font = NSFont.systemFont(ofSize: 12)
+                        textView.string = "What's New:\n\n" + fullChangelog
+                        
+                        scrollView.documentView = textView
+                        alert.accessoryView = scrollView
+                    }
+                    
+                    alert.addButton(withTitle: "Get Update")
+                    alert.addButton(withTitle: "Later")
+                    
+                    if !showChangelog && !fullChangelog.isEmpty {
+                        alert.addButton(withTitle: "See Changelog")
+                    }
+                    
+                    let response = alert.runModal()
+                    
+                    if response == .alertFirstButtonReturn {
+                        if let url = URL(string: "https://snapbackapp.vercel.app") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    } else if response == .alertThirdButtonReturn { // See Changelog
+                         showUpdateAlert(showChangelog: true)
                     }
                 }
+                
+                showUpdateAlert(showChangelog: false)
             }
         }
     }
