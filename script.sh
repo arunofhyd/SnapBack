@@ -1269,7 +1269,7 @@ if [ $? -eq 0 ]; then
     show_success_art
     print_line
     printf "\n"
-    printf "   ${NEON_CYAN}DEPLOYMENT COMPLETE:${NC} $APP_NAME.app is now on your Desktop.\n"
+    printf "   ${NEON_CYAN}DEPLOYMENT COMPLETE:${NC} $APP_NAME v$APP_VERSION.app is now on your Desktop.\n"
     printf "   ${NEON_PURPLE}SUGGESTION:${NC} Drag to Applications and assign launch shortcut.\n"
     printf "   ${TXT_GREY}EXECUTION TIME: $(date +%T)${NC}\n"
     printf "\n"
