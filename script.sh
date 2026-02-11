@@ -2,7 +2,7 @@
 
 # --- CONFIGURATION ---
 APP_VERSION="1"
-APP_NAME="Snap Back v$APP_VERSION"
+APP_NAME="Snap Back"
 
 # --- CYBERPUNK THEME COLORS ---
 BOLD='\033[1m'
@@ -1042,7 +1042,7 @@ let app = NSApplication.shared
 app.setActivationPolicy(.regular)
 
 let alert = NSAlert()
-alert.messageText = appTitle
+alert.messageText = "\(appTitle) v__APP_VERSION__"
 alert.informativeText = "Instantly save and restore your workspace, Never lose your layout again."
 alert.addButton(withTitle: "Restore")
 alert.addButton(withTitle: "Save New...")
