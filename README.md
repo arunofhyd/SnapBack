@@ -32,12 +32,13 @@ Designed to replace manual window arrangement, Snap Back offers a streamlined in
 
 ## ✨ Key Features
 
-*   **Instant Restore**: ⚡ Snap **any app window** back to its exact pixel coordinates instantly.
-*   **Smart Tabs**: 🌐 Detects and restores open tabs in **Safari, Chrome, Brave, Edge, Arc, Vivaldi, Opera, and Firefox**.
-*   **Visual Previews**: 📸 See a screenshot of your saved layout before restoring.
-*   **Local Privacy**: 🔒 No cloud sync. No tracking. Your layout profiles live locally in your Pictures folder.
-*   **Multi-Profile**: 📂 Save multiple named profiles (e.g., "Coding", "Trading", "Design").
-*   **Native Performance**: 🚀 Built with Swift and AppleScript for native macOS integration.
+*   **Instant Restore**: ⚡ Snap **any app window** back to its exact pixel coordinates instantly. Your entire workspace is ready in seconds.
+*   **Smart Tabs**: 🌐 Detects and restores open tabs in **Safari, Chrome, Brave, Edge, Arc, Vivaldi, Opera, and Firefox**. Reclaims your lost browsing sessions automatically.
+*   **Visual Previews**: 📸 See a screenshot snapshot of your saved layout before restoring, so you know exactly which context you're switching to.
+*   **Local Privacy**: 🔒 No cloud sync. No tracking. Your layout profiles live locally in your `~/Pictures/Snap Back Profiles` folder.
+*   **Multi-Profile**: 📂 Save multiple named profiles (e.g., "Coding", "Trading", "Design") to switch contexts instantly depending on your task.
+*   **Native Performance**: 🚀 Built with Swift and AppleScript for lightning-fast execution and zero dependencies.
+*   **Self-Contained Installer**: 📦 A single script builds and installs the app with a custom interactive installer.
 
 ## 📦 Tech Stack
 *   **Swift** (AppKit)

@@ -1377,7 +1377,7 @@ class DropTargetView: NSImageView {
 class InstallerWindow: NSWindow {
     override init(contentRect: NSRect, styleMask style: NSWindow.StyleMask, backing backingStoreType: NSWindow.BackingStoreType, defer flag: Bool) {
         super.init(contentRect: contentRect, styleMask: [.titled, .closable, .miniaturizable], backing: backingStoreType, defer: flag)
-        self.title = "Install __APP_NAME__"
+        self.title = "__APP_NAME__ v__APP_VERSION__"
         self.center()
         self.backgroundColor = NSColor(white: 0.15, alpha: 1.0)
     }
@@ -1459,6 +1459,7 @@ EOF
 
     # Inject App Name into Installer Source
     sed -i '' "s/__APP_NAME__/$APP_NAME/g" Installer.swift
+    sed -i '' "s/__APP_VERSION__/$APP_VERSION/g" Installer.swift
 
     # Compile Installer
     mkdir -p "Install $APP_NAME.app/Contents/MacOS"
