@@ -85,8 +85,15 @@ EOF
     printf "${NC}\n"
 }
 
+# --- WINDOW RESIZE ---
+resize_window() {
+    osascript -e 'tell application "Terminal" to set number of rows of front window to 42' -e 'tell application "Terminal" to set number of columns of front window to 85' &>/dev/null || \
+    osascript -e 'tell application "iTerm" to set columns of current session of current window to 85' -e 'tell application "iTerm" to set rows of current session of current window to 42' &>/dev/null || true
+}
+
 # --- EXECUTION START ---
 
+resize_window
 show_banner
 
 # --- STEP 0: SYSTEM CHECK ---
@@ -116,7 +123,6 @@ printf "\n"
 # --- STEP 1: ENVIRONMENT ---
 # Create a secure temporary directory
 BUILD_DIR=$(mktemp -d)
-DEST_DIR="$HOME/Desktop"
 
 show_step 1 "Initializing clean build workspace..."
 printf "   Target Path: ${TXT_GREY}$BUILD_DIR${NC}\n"
@@ -1252,32 +1258,265 @@ if [ $? -eq 0 ]; then
     codesign --force --deep -s - "$APP_NAME.app" &>/dev/null
     printf "${NEON_GREEN}Secure.${NC}\n"
     
+    # --- STEP 6: INSTALLER INTERFACE ---
+    show_step 6 "Forging Interactive Installer..."
+    
+    cat > Installer.swift <<'EOF'
+import Cocoa
+import QuartzCore
+
+class DraggableIconView: NSImageView, NSDraggingSource {
+    var fileURL: URL?
+
+    func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+        return .copy
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard let url = fileURL else { return }
+        let pasteboardItem = NSPasteboardItem()
+        pasteboardItem.setString(url.path, forType: .fileURL)
+        let draggingItem = NSDraggingItem(pasteboardWriter: pasteboardItem)
+        let dragRect = self.bounds
+        draggingItem.setDraggingFrame(dragRect, contents: self.image)
+        beginDraggingSession(with: [draggingItem], event: event, source: self)
+    }
+}
+
+class DropTargetView: NSImageView {
+    
+    override func awakeFromNib() {
+        registerForDraggedTypes([.fileURL])
+    }
+    
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        registerForDraggedTypes([.fileURL])
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        registerForDraggedTypes([.fileURL])
+    }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        return .copy
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        guard let board = sender.draggingPasteboard.propertyList(forType: .fileURL) as? String else { return false }
+        let sourceURL = URL(fileURLWithPath: board)
+        let appName = sourceURL.lastPathComponent
+        let destURL = URL(fileURLWithPath: "/Applications").appendingPathComponent(appName)
+        
+        // Visual Feedback (Bounce)
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.2
+            self.animator().frame.size.width += 10
+            self.animator().frame.size.height += 10
+            self.animator().frame.origin.x -= 5
+            self.animator().frame.origin.y -= 5
+        } completionHandler: {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.2
+                self.animator().frame.size.width -= 10
+                self.animator().frame.size.height -= 10
+                self.animator().frame.origin.x += 5
+                self.animator().frame.origin.y += 5
+            }
+        }
+        
+        do {
+            if FileManager.default.fileExists(atPath: destURL.path) {
+                // Try to remove existing
+                try FileManager.default.removeItem(at: destURL)
+            }
+            try FileManager.default.copyItem(at: sourceURL, to: destURL)
+            
+            // Success Animation/Sound
+            NSSound(named: "Glass")?.play()
+            
+            // Show Success Alert
+            let displayName = appName.replacingOccurrences(of: ".app", with: "")
+            let alert = NSAlert()
+            alert.messageText = "Installation Successful"
+            alert.informativeText = "\(displayName) has been installed to Applications."
+            alert.icon = NSWorkspace.shared.icon(forFile: sourceURL.path)
+            alert.addButton(withTitle: "Launch App")
+            alert.addButton(withTitle: "Quit")
+            let response = alert.runModal()
+            
+            if response == .alertFirstButtonReturn {
+                NSWorkspace.shared.open(destURL)
+            }
+            NSApplication.shared.terminate(nil)
+            
+        } catch {
+            // Fallback to Admin Privileges via AppleScript if permission denied
+            let sanitizedPath = sourceURL.path.replacingOccurrences(of: "'", with: "'\\''")
+            let script = "do shell script \"cp -R '\(sanitizedPath)' /Applications/\" with administrator privileges"
+            var errorDict: NSDictionary?
+            if let appleScript = NSAppleScript(source: script) {
+                appleScript.executeAndReturnError(&errorDict)
+                if errorDict == nil {
+                     NSWorkspace.shared.open(destURL)
+                     NSApplication.shared.terminate(nil)
+                } else {
+                    let errAlert = NSAlert()
+                    errAlert.messageText = "Installation Failed"
+                    errAlert.informativeText = error.localizedDescription
+                    errAlert.runModal()
+                }
+            }
+        }
+        
+        return true
+    }
+}
+
+class InstallerWindow: NSWindow {
+    override init(contentRect: NSRect, styleMask style: NSWindow.StyleMask, backing backingStoreType: NSWindow.BackingStoreType, defer flag: Bool) {
+        super.init(contentRect: contentRect, styleMask: [.titled, .closable, .miniaturizable], backing: backingStoreType, defer: flag)
+        self.title = "Install __APP_NAME__"
+        self.center()
+        self.backgroundColor = NSColor(white: 0.15, alpha: 1.0)
+    }
+}
+
+// --- SETUP ---
+let app = NSApplication.shared
+app.setActivationPolicy(.regular)
+
+let winW: CGFloat = 600
+let winH: CGFloat = 350
+let window = InstallerWindow(contentRect: NSRect(x: 0, y: 0, width: winW, height: winH), styleMask: [.titled, .closable], backing: .buffered, defer: false)
+
+// App Icon (Source)
+let iconSize: CGFloat = 128
+let appIconView = DraggableIconView(frame: NSRect(x: 80, y: (winH - iconSize)/2 + 20, width: iconSize, height: iconSize))
+let appPath = Bundle.main.bundlePath.replacingOccurrences(of: "Install __APP_NAME__.app", with: "__APP_NAME__.app")
+if let image = NSImage(contentsOfFile: appPath + "/Contents/Resources/AppIcon.icns") {
+    appIconView.image = image
+}
+appIconView.fileURL = URL(fileURLWithPath: appPath)
+appIconView.imageScaling = .scaleProportionallyUpOrDown
+window.contentView?.addSubview(appIconView)
+
+// Applications Folder (Dest)
+let folderIconView = DropTargetView(frame: NSRect(x: winW - 80 - iconSize, y: (winH - iconSize)/2 + 20, width: iconSize, height: iconSize))
+folderIconView.image = NSWorkspace.shared.icon(forFile: "/Applications")
+folderIconView.imageScaling = .scaleProportionallyUpOrDown
+window.contentView?.addSubview(folderIconView)
+
+// Arrow Animation
+let arrowW: CGFloat = 60
+let arrowH: CGFloat = 40
+let arrowX = (winW - arrowW) / 2
+let arrowY = (winH - arrowH) / 2 + 20
+let arrowView = NSImageView(frame: NSRect(x: arrowX, y: arrowY, width: arrowW, height: arrowH))
+// Draw a simple arrow image programmatically
+let arrowImg = NSImage(size: NSSize(width: arrowW, height: arrowH))
+arrowImg.lockFocus()
+NSColor.white.set()
+let path = NSBezierPath()
+path.move(to: NSPoint(x: 0, y: arrowH/2))
+path.line(to: NSPoint(x: arrowW - 20, y: arrowH/2))
+path.stroke()
+// Arrowhead
+path.move(to: NSPoint(x: arrowW - 20, y: arrowH))
+path.line(to: NSPoint(x: arrowW, y: arrowH/2))
+path.line(to: NSPoint(x: arrowW - 20, y: 0))
+path.lineWidth = 4
+path.lineCapStyle = .round
+path.stroke()
+arrowImg.unlockFocus()
+arrowView.image = arrowImg
+arrowView.wantsLayer = true
+window.contentView?.addSubview(arrowView)
+
+// Pulse Animation
+let animation = CABasicAnimation(keyPath: "opacity")
+animation.fromValue = 0.2
+animation.toValue = 1.0
+animation.duration = 1.0
+animation.autoreverses = true
+animation.repeatCount = .infinity
+arrowView.layer?.add(animation, forKey: "pulse")
+
+// Text Instructions
+let label = NSTextField(labelWithString: "Drag Snap Back to Applications")
+label.font = NSFont.systemFont(ofSize: 16, weight: .medium)
+label.textColor = NSColor.lightGray
+label.sizeToFit()
+label.frame.origin.x = (winW - label.frame.width) / 2
+label.frame.origin.y = 50
+window.contentView?.addSubview(label)
+
+window.makeKeyAndOrderFront(nil)
+app.activate(ignoringOtherApps: true)
+app.run()
+EOF
+
+    # Inject App Name into Installer Source
+    sed -i '' "s/__APP_NAME__/$APP_NAME/g" Installer.swift
+
+    # Compile Installer
+    mkdir -p "Install $APP_NAME.app/Contents/MacOS"
+    mkdir -p "Install $APP_NAME.app/Contents/Resources"
+    # Reuse Icon
+    cp "$APP_NAME.app/Contents/Resources/AppIcon.icns" "Install $APP_NAME.app/Contents/Resources/"
+    
+    swiftc Installer.swift -o "Install $APP_NAME.app/Contents/MacOS/Install $APP_NAME"
+    chmod +x "Install $APP_NAME.app/Contents/MacOS/Install $APP_NAME"
+    
+    # Simple Info.plist for Installer
+    cat > "Install $APP_NAME.app/Contents/Info.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>Install $APP_NAME</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.snapback.installer</string>
+    <key>CFBundleName</key>
+    <string>Install $APP_NAME</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+</dict>
+</plist>
+EOF
+
+    # Use temporary directory for installer workspace
+    INSTALLER_DIR=$(mktemp -d)
+    
+    # Move Payload and Installer
+    mv "$APP_NAME.app" "$INSTALLER_DIR/"
+    mv "Install $APP_NAME.app" "$INSTALLER_DIR/"
+    
     # Return to previous directory
     popd > /dev/null
     
-    # Move app to Desktop (Replace existing)
-    if [ -d "$DEST_DIR/$APP_NAME.app" ]; then
-        rm -rf "$DEST_DIR/$APP_NAME.app"
-    fi
-    
-    mv "$BUILD_DIR/$APP_NAME.app" "$DEST_DIR/"
-    
-    # Clean up temp dir
+    # Clean up build dir
     rm -rf "$BUILD_DIR"
     
     print_line
     show_success_art
     print_line
     printf "\n"
-    printf "   ${NEON_CYAN}DEPLOYMENT COMPLETE:${NC} $APP_NAME.app (v$APP_VERSION) is now on your Desktop.\n"
-    printf "   ${NEON_PURPLE}SUGGESTION:${NC} Drag to Applications and assign launch shortcut.\n"
+    printf "   ${NEON_CYAN}DEPLOYMENT COMPLETE:${NC} $APP_NAME (v$APP_VERSION) installer has been launched.\n"
+    printf "   ${NEON_PURPLE}ACTION REQUIRED:${NC} Use the window to drag and install.\n"
+    printf "   ${TXT_GREY}NOTE:${NC} The installer and temporary files will be cleaned up automatically by macOS.\n"
     printf "   ${TXT_GREY}EXECUTION TIME: $(date +%T)${NC}\n"
     printf "\n"
+    
+    # Launch the Installer
+    open "$INSTALLER_DIR/Install $APP_NAME.app"
+    
     # Audio Feedback
     afplay /System/Library/Sounds/Glass.aiff 2>/dev/null || tput bel
-    
-    # Trigger System Notification
-    osascript -e "display notification \"$APP_NAME has been successfully installed to your Desktop.\" with title \"Installation Complete\"" &>/dev/null
 else
     show_failure_art
     printf "\n"
