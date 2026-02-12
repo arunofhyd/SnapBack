@@ -409,11 +409,11 @@ func checkForUpdates() {
                     alert.informativeText = "A new version (v\(remoteVer)) is available. You are on v\(currentVer)."
                     
                     if showChangelog && !fullChangelog.isEmpty {
-                        let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 300, height: 200))
+                        let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 450, height: 250))
                         scrollView.hasVerticalScroller = true
                         scrollView.drawsBackground = false
                         
-                        let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 300, height: 200))
+                        let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 450, height: 250))
                         textView.isEditable = false
                         textView.drawsBackground = false
                         textView.font = NSFont.systemFont(ofSize: 12)
