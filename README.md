@@ -33,7 +33,7 @@ Designed to replace manual window arrangement, Snap Back offers a streamlined in
 ## ✨ Key Features
 
 *   **Instant Restore**: ⚡ Snap **any app window** back to its exact pixel coordinates instantly. Your entire workspace is ready in seconds.
-*   **Smart Tabs**: 🌐 Detects and restores open tabs in **Safari, Chrome, Brave, Edge, Arc, Vivaldi, Opera, and Firefox**. Reclaims your lost browsing sessions automatically.
+*   **Smart Tabs**: 🌐 Automatically re-opens tabs for **Safari, Chrome, Firefox, Arc, and all Chromium browsers**. Reclaims your lost browsing sessions.
 *   **Visual Previews**: 📸 See a screenshot snapshot of your saved layout before restoring, so you know exactly which context you're switching to.
 *   **Local Privacy**: 🔒 No cloud sync. No tracking. Your layout profiles live locally in your `~/Pictures/Snap Back Profiles` folder.
 *   **Multi-Profile**: 📂 Save multiple named profiles (e.g., "Coding", "Trading", "Design") to switch contexts instantly depending on your task.
