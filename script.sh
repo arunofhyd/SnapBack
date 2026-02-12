@@ -54,8 +54,8 @@ show_banner() {
     clear
     printf "${NEON_CYAN}"
     cat << "EOF"
- █▀ █▄░█ ▄▀█ █▀█  █▄▄ ▄▀█ █▀▀ █▄▀
- ▄█ █░▀█ █▀█ █▀▀  █▄█ █▀█ █▄▄ █░█
+ █▀ █▄ █ ▄▀█ █▀█  █▄▄ ▄▀█ █▀▀ █▄▀
+ ▄█ █ ▀█ █▀█ █▀▀  █▄█ █▀█ █▄▄ █ █
 EOF
     printf "${NC}\n"
     print_line
@@ -69,7 +69,7 @@ EOF
 show_success_art() {
     printf "\n${NEON_GREEN}"
     cat << "EOF"
- █▀ █░█ █▀▀ █▀▀ █▀▀ █▀ █▀
+ █▀ █ █ █▀▀ █▀▀ █▀▀ █▀ █▀
  ▄█ █▄█ █▄▄ █▄▄ ██▄ ▄█ ▄█
 EOF
     printf "${NC}\n"
@@ -79,8 +79,8 @@ EOF
 show_failure_art() {
     printf "\n${ALERT_RED}"
     cat << "EOF"
- █▀▀ ▄▀█ █ █░░ █▀▀ █▀▄
- █▀░ █▀█ █ █▄▄ ██▄ █▄▀
+ █▀▀ ▄▀█ █ █   █▀▀ █▀▄
+ █▀  █▀█ █ █▄▄ ██▄ █▄▀
 EOF
     printf "${NC}\n"
 }
