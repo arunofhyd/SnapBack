@@ -306,9 +306,9 @@
                     setTimeout(() => {
                         container.style.boxShadow = originalShadow;
                         container.style.borderColor = "";
-                    }, 500);
+                    }, 300);
 
-                }, 800); // Wait for the glow/pulse animation peak
+                }, 150); // Restore windows almost instantly while text pops
 
                 // Remove overlay after animation completes
                 setTimeout(() => {
@@ -317,7 +317,7 @@
                         if(container.contains(overlay)) {
                             container.removeChild(overlay);
                         }
-                    }, 300); // Wait for fade out
-                }, 1300);
+                    }, 200); // Wait for fade out
+                }, 600);
             });
         });
