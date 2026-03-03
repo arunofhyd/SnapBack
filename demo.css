@@ -24,7 +24,7 @@
     font-weight: 700;
     font-family: 'Inter', system-ui, sans-serif;
     color: transparent;
-    background: linear-gradient(90deg, #00ffff, #9d00ff);
+    background: linear-gradient(90deg, #00ffff, #00ffff);
     -webkit-background-clip: text;
     background-clip: text;
     opacity: 0;
