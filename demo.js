@@ -265,25 +265,59 @@
 
             // 5. Restore Button
             restoreBtn.addEventListener('click', () => {
-                windows.forEach(win => {
-                    const state = savedState[win.id];
-                    if (state) {
-                        win.style.left = state.left;
-                        win.style.top = state.top;
-                        win.style.width = state.width;
-                        win.style.height = state.height;
-                        win.style.display = state.display;
-                        updateDockDot(win.id, state.display !== 'none');
-                    }
-                });
+                // Create Magical Overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'snapback-overlay';
 
-                // Flash container
-                const originalShadow = container.style.boxShadow;
-                container.style.boxShadow = "0 0 20px rgba(0, 255, 255, 0.3)";
-                container.style.borderColor = "rgba(0, 255, 255, 0.5)";
+                const text = document.createElement('div');
+                text.className = 'snapback-text';
+                text.textContent = 'Snap Back';
+
+                overlay.appendChild(text);
+                container.appendChild(overlay);
+
+                // Trigger reflow to ensure transition works
+                void overlay.offsetWidth;
+                overlay.classList.add('active');
+
+                // Delay restoration to let animation play
                 setTimeout(() => {
-                    container.style.boxShadow = originalShadow;
-                    container.style.borderColor = "";
-                }, 500);
+                    windows.forEach(win => {
+                        const state = savedState[win.id];
+                        if (state) {
+                            win.style.left = state.left;
+                            win.style.top = state.top;
+                            win.style.width = state.width;
+                            win.style.height = state.height;
+                            win.style.display = state.display;
+                            updateDockDot(win.id, state.display !== 'none');
+
+                            // Ensure window pops back nicely if it was minimized
+                            if (state.display !== 'none') {
+                                bringToFront(win);
+                            }
+                        }
+                    });
+
+                    // Flash container
+                    const originalShadow = container.style.boxShadow;
+                    container.style.boxShadow = "0 0 20px rgba(0, 255, 255, 0.3)";
+                    container.style.borderColor = "rgba(0, 255, 255, 0.5)";
+                    setTimeout(() => {
+                        container.style.boxShadow = originalShadow;
+                        container.style.borderColor = "";
+                    }, 500);
+
+                }, 800); // Wait for the glow/pulse animation peak
+
+                // Remove overlay after animation completes
+                setTimeout(() => {
+                    overlay.classList.remove('active');
+                    setTimeout(() => {
+                        if(container.contains(overlay)) {
+                            container.removeChild(overlay);
+                        }
+                    }, 300); // Wait for fade out
+                }, 1300);
             });
         });
