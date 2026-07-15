@@ -1,11 +1,11 @@
 {
-  "version": "1.0",
+  "version": "1.0.0",
   "changelog": [
     {
-      "version": "v1.0",
+      "version": "v1.0.0",
       "date": "2026-02-10",
       "changes": [
-        "Initial Release: Snap Back v1.0 is here!",
+        "Initial Release: Snap Back v1.0.0 is here!",
         "Window Layout Saving: Instantly capture the exact position and size of every open window.",
         "One-Click Restoration: Restore your entire workspace layout with a single click.",
         "Smart Browser Tab Restoration: Automatically re-opens tabs for Safari, Chrome, Firefox, Arc, and all Chromium browsers.",
