@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- CONFIGURATION ---
-APP_VERSION="1.0"
+APP_VERSION="1.0.0"
 APP_NAME="Snap Back"
 
 # --- CYBERPUNK THEME COLORS ---
