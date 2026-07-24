@@ -260,7 +260,7 @@ cat > "$APP_NAME.app/Contents/Info.plist" <<'EOF'
     <key>CFBundleExecutable</key>
     <string>SnapBack</string>
     <key>CFBundleIdentifier</key>
-    <string>com.snapback.app</string>
+    <string>com.aoh.snapback</string>
     <key>CFBundleName</key>
     <string>__APP_NAME__</string>
     <key>CFBundleIconFile</key>
@@ -1485,7 +1485,7 @@ EOF
     <key>CFBundleExecutable</key>
     <string>Install $APP_NAME</string>
     <key>CFBundleIdentifier</key>
-    <string>com.snapback.installer</string>
+    <string>com.aoh.snapback.installer</string>
     <key>CFBundleName</key>
     <string>Install $APP_NAME</string>
     <key>CFBundleIconFile</key>
