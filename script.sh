@@ -374,7 +374,7 @@ func showScriptError(details: String?) {
 }
 
 func checkForUpdates() {
-    guard let url = URL(string: "https://snapbackapp.vercel.app/version.json") else { return }
+    guard let url = URL(string: "https://raw.githubusercontent.com/arunofhyd/SnapBack/main/version.json") else { return }
     let task = URLSession.shared.dataTask(with: url) { data, response, error in
         guard let data = data,
               let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
@@ -395,7 +395,6 @@ func checkForUpdates() {
         if updateAvailable {
             var fullChangelog = ""
             if let changes = json["changelog"] as? [[String: Any]] {
-                // Find changelog entry matching the version (handling optional 'v' prefix)
                 if let entry = changes.first(where: { ($0["version"] as? String)?.replacingOccurrences(of: "v", with: "") == remoteVer }),
                    let notes = entry["changes"] as? [String] {
                     fullChangelog = notes.map { "• \($0)" }.joined(separator: "\n")
@@ -423,7 +422,7 @@ func checkForUpdates() {
                         alert.accessoryView = scrollView
                     }
                     
-                    alert.addButton(withTitle: "Get Update")
+                    alert.addButton(withTitle: "Update Now")
                     alert.addButton(withTitle: "Later")
                     
                     if !showChangelog && !fullChangelog.isEmpty {
@@ -433,15 +432,55 @@ func checkForUpdates() {
                     let response = alert.runModal()
                     
                     if response == .alertFirstButtonReturn {
-                        if let url = URL(string: "https://snapbackapp.vercel.app") {
-                            NSWorkspace.shared.open(url)
-                        }
+                        downloadAndInstallUpdate()
                     } else if response == .alertThirdButtonReturn { // See Changelog
                          showUpdateAlert(showChangelog: true)
                     }
                 }
                 
                 showUpdateAlert(showChangelog: false)
+            }
+        }
+    }
+    task.resume()
+}
+
+func downloadAndInstallUpdate() {
+    let commandURL = "https://raw.githubusercontent.com/arunofhyd/SnapBack/refs/heads/main/script.sh"
+    guard let url = URL(string: commandURL) else { return }
+    
+    let task = URLSession.shared.downloadTask(with: url) { tempURL, _, error in
+        DispatchQueue.main.async {
+            if let error = error {
+                let err = NSAlert()
+                err.alertStyle = .warning
+                err.messageText = "Download Failed"
+                err.informativeText = "Could not download the update:\n\(error.localizedDescription)\n\nPlease check your internet connection and try again."
+                err.addButton(withTitle: "OK")
+                err.runModal()
+                return
+            }
+            
+            guard let tempURL = tempURL else { return }
+            
+            let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+            let destURL = downloadsDir.appendingPathComponent("install-snapback.command")
+            
+            try? FileManager.default.removeItem(at: destURL)
+            do {
+                try FileManager.default.copyItem(at: tempURL, to: destURL)
+                try FileManager.default.setAttributes(
+                    [.posixPermissions: NSNumber(value: 0o755)],
+                    ofItemAtPath: destURL.path
+                )
+                NSWorkspace.shared.open(destURL)
+            } catch {
+                let err = NSAlert()
+                err.alertStyle = .warning
+                err.messageText = "Could Not Save Installer"
+                err.informativeText = "The installer was downloaded but couldn't be saved:\n\(error.localizedDescription)"
+                err.addButton(withTitle: "OK")
+                err.runModal()
             }
         }
     }
