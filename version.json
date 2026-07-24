@@ -1,6 +1,13 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "changelog": [
+    {
+      "version": "1.0.2",
+      "date": "2026-07-24",
+      "changes": [
+        "Standardized bundle identifier to com.aoh.snapback across app bundle, Info.plist, and installer."
+      ]
+    },
     {
       "version": "1.0.1",
       "date": "2026-07-19",
