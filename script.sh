@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- CONFIGURATION ---
-APP_VERSION="$(jq -r '.version' version.json 2>/dev/null || echo "1.0.2")"
+APP_VERSION="1.0.2"1.0.2")"
 APP_NAME="Snap Back"
 
 # --- CYBERPUNK THEME COLORS ---
