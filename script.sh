@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- CONFIGURATION ---
-APP_VERSION="1.0.2"1.0.2")"
+APP_VERSION="1.0.4"
 APP_NAME="Snap Back"
 
 # --- CYBERPUNK THEME COLORS ---
@@ -291,6 +291,30 @@ printf "   ${NEON_GREEN}✔ Info.plist injected.${NC}\n\n"
 show_step 4 "Injecting Source Code..."
 cat > SnapBack.swift <<'EOF'
 import Cocoa
+import SwiftUI
+
+struct UpdateChangelogView: View {
+    let changelog: String
+
+    var body: some View {
+        ScrollView(.vertical, showsIndicators: true) {
+            Text(changelog)
+                .font(.system(size: 12, weight: .regular))
+                .foregroundColor(.primary)
+                .lineSpacing(3)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+        }
+        .frame(width: 340, height: 140)
+        .background(Color(NSColor.controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+        )
+    }
+}
 
 // --- CONFIGURATION ---
 let appTitle = "__APP_NAME__"
@@ -374,8 +398,16 @@ func showScriptError(details: String?) {
 }
 
 func checkForUpdates() {
-    guard let url = URL(string: "https://raw.githubusercontent.com/arunofhyd/SnapBack/main/version.json") else { return }
-    let task = URLSession.shared.dataTask(with: url) { data, response, error in
+    URLCache.shared.removeAllCachedResponses()
+    let ts = Int(Date().timeIntervalSince1970)
+    let versionURLStr = "https://raw.githubusercontent.com/arunofhyd/SnapBack/main/version.json?t=\(ts)"
+    guard let url = URL(string: versionURLStr) else { return }
+    var request = URLRequest(url: url)
+    request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+    request.addValue("no-cache", forHTTPHeaderField: "Cache-Control")
+    request.addValue("no-cache", forHTTPHeaderField: "Pragma")
+
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
         guard let data = data,
               let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
               let remoteVer = json["version"] as? String,
@@ -395,50 +427,45 @@ func checkForUpdates() {
         if updateAvailable {
             var fullChangelog = ""
             if let changes = json["changelog"] as? [[String: Any]] {
-                if let entry = changes.first(where: { ($0["version"] as? String)?.replacingOccurrences(of: "v", with: "") == remoteVer }),
-                   let notes = entry["changes"] as? [String] {
-                    fullChangelog = notes.map { "• \($0)" }.joined(separator: "\n")
+                let unreadEntries = changes.filter { entry in
+                    guard let v = (entry["version"] as? String)?.replacingOccurrences(of: "v", with: "") else { return false }
+                    let rComp = v.split(separator: ".").compactMap { Int($0) }
+                    let cComp = currentVer.split(separator: ".").compactMap { Int($0) }
+                    for i in 0..<max(rComp.count, cComp.count) {
+                        let r = i < rComp.count ? rComp[i] : 0
+                        let c = i < cComp.count ? cComp[i] : 0
+                        if r > c { return true }
+                        if r < c { return false }
+                    }
+                    return false
                 }
+                fullChangelog = unreadEntries.compactMap { entry -> String? in
+                    guard let v = entry["version"] as? String,
+                          let notes = entry["changes"] as? [String] else { return nil }
+                    let list = notes.map { "• \($0)" }.joined(separator: "\n")
+                    return "Version \(v):\n\(list)"
+                }.joined(separator: "\n\n")
             }
             
             DispatchQueue.main.async {
-                func showUpdateAlert(showChangelog: Bool) {
-                    let alert = NSAlert()
-                    alert.messageText = "Update Available"
-                    alert.informativeText = "A new version (v\(remoteVer)) is available. You are on v\(currentVer)."
-                    
-                    if showChangelog && !fullChangelog.isEmpty {
-                        let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 450, height: 250))
-                        scrollView.hasVerticalScroller = true
-                        scrollView.drawsBackground = false
-                        
-                        let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 450, height: 250))
-                        textView.isEditable = false
-                        textView.drawsBackground = false
-                        textView.font = NSFont.systemFont(ofSize: 12)
-                        textView.string = "What's New:\n\n" + fullChangelog
-                        
-                        scrollView.documentView = textView
-                        alert.accessoryView = scrollView
-                    }
-                    
-                    alert.addButton(withTitle: "Update Now")
-                    alert.addButton(withTitle: "Later")
-                    
-                    if !showChangelog && !fullChangelog.isEmpty {
-                        alert.addButton(withTitle: "See Changelog")
-                    }
-                    
-                    let response = alert.runModal()
-                    
-                    if response == .alertFirstButtonReturn {
-                        downloadAndInstallUpdate()
-                    } else if response == .alertThirdButtonReturn { // See Changelog
-                         showUpdateAlert(showChangelog: true)
-                    }
+                let alert = NSAlert()
+                NSApp.activate(ignoringOtherApps: true)
+                alert.messageText = "SnapBack v\(remoteVer) is available"
+                alert.informativeText = "You have v\(currentVer). Here's what's new:"
+                
+                if !fullChangelog.isEmpty {
+                    let hosting = NSHostingView(rootView: UpdateChangelogView(changelog: fullChangelog))
+                    hosting.frame = NSRect(x: 0, y: 0, width: 340, height: 140)
+                    alert.accessoryView = hosting
                 }
                 
-                showUpdateAlert(showChangelog: false)
+                alert.addButton(withTitle: "Update Now")
+                alert.addButton(withTitle: "Later")
+                
+                let response = alert.runModal()
+                if response == .alertFirstButtonReturn {
+                    downloadAndInstallUpdate()
+                }
             }
         }
     }
