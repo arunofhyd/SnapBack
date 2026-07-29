@@ -1321,7 +1321,7 @@ if [ $? -eq 0 ]; then
     
     # --- Ad-Hoc Signing ---
     printf "   ${TXT_GREY}Applying local signature...${NC} "
-    codesign --force --deep -s - "$APP_NAME.app" &>/dev/null
+    codesign --force --deep -s - --requirements '=designated => identifier "com.aoh.snapback"' "$APP_NAME.app" &>/dev/null
     printf "${NEON_GREEN}Secure.${NC}\n"
     
     if [ "$CI" = "true" ]; then
