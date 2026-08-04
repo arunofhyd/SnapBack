@@ -40,6 +40,35 @@ Designed to replace manual window arrangement, Snap Back offers a streamlined in
 *   **Native Performance**: 🚀 Built with Swift and AppleScript for lightning-fast execution and zero dependencies.
 *   **Self-Contained Installer**: 📦 A single script builds and installs the app with a custom interactive installer.
 
+## 📦 Install
+
+The fastest way to install Snap Back is to run the following one-liner in your **Terminal**:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/arunofhyd/SnapBack/main/script.sh)"
+```
+
+### Manual Installation (Fallback)
+If you prefer to download and run the installer script manually:
+
+1. **Download** [`script.sh`](script.sh) (open the file, then click **Download raw file**).
+2. Open **Terminal** (`⌘ + Space`, type `Terminal`, press Enter).
+3. Type `sh ` — that's **s**, **h**, then a **space**.
+4. **Drag** the downloaded `script.sh` into the Terminal window (its path fills in automatically).
+5. Press **Enter**, follow the prompts, then **drag Snap Back onto the Applications folder**.
+
+> **First time only:** The installer may ask to install Apple's Command Line Tools (a small, official Apple download). Click **Install**, wait, then continue. This lets your Mac build the app locally — which is why macOS trusts it and never shows a "damaged app" warning.
+
+## ⚙️ How It Works
+
+The installer downloads the app's source and **builds it right on your Mac**. Because it's compiled locally rather than downloaded pre-made, macOS Gatekeeper trusts it — no bypassing scary warnings.
+
+## 🗑️ Uninstall
+
+1. Quit Snap Back.
+2. Drag **Snap Back** from Applications to the Trash.
+3. To remove saved layout profiles: delete `~/Pictures/Snap Back Profiles`.
+
 ## 📦 Tech Stack
 *   **Swift** (AppKit)
 *   **AppleScript** (Automation)
