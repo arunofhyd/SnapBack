@@ -1404,6 +1404,12 @@ class DropTargetView: NSImageView {
                 try FileManager.default.removeItem(at: destURL)
             }
             try FileManager.default.copyItem(at: sourceURL, to: destURL)
+            let clean = Process()
+            clean.launchPath = "/usr/bin/xattr"
+            clean.arguments = ["-dr", "com.apple.quarantine", destURL.path]
+            clean.standardOutput = Pipe()
+            clean.standardError = Pipe()
+            try? clean.run(); clean.waitUntilExit()
             
             // Success Animation/Sound
             NSSound(named: "Glass")?.play()
