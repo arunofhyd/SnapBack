@@ -1,6 +1,13 @@
 {
-  "version": "1.0.4",
+  "version": "1.0.5",
   "changelog": [
+    {
+      "version": "1.0.5",
+      "date": "2026-08-05",
+      "changes": [
+        "24-Hour Update Check Rate-Limiting: Automatic background launch update check now respects a strict 24-hour rate limit so it checks at most once per day without pestering."
+      ]
+    },
     {
       "version": "1.0.4",
       "date": "2026-07-27",
