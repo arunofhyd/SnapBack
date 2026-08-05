@@ -45,16 +45,16 @@ Designed to replace manual window arrangement, Snap Back offers a streamlined in
 The fastest way to install Snap Back is to run the following one-liner in your **Terminal**:
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/arunofhyd/SnapBack/main/script.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/arunofhyd/SnapBack/main/install-snapback.command)"
 ```
 
 ### Manual Installation (Fallback)
 If you prefer to download and run the installer script manually:
 
-1. **Download** [`script.sh`](script.sh) (open the file, then click **Download raw file**).
+1. **Download** [`install-snapback.command`](install-snapback.command) (open the file, then click **Download raw file**).
 2. Open **Terminal** (`⌘ + Space`, type `Terminal`, press Enter).
 3. Type `sh ` — that's **s**, **h**, then a **space**.
-4. **Drag** the downloaded `script.sh` into the Terminal window (its path fills in automatically).
+4. **Drag** the downloaded `install-snapback.command` into the Terminal window (its path fills in automatically).
 5. Press **Enter**, follow the prompts, then **drag Snap Back onto the Applications folder**.
 
 > **First time only:** The installer may ask to install Apple's Command Line Tools (a small, official Apple download). Click **Install**, wait, then continue. This lets your Mac build the app locally — which is why macOS trusts it and never shows a "damaged app" warning.
