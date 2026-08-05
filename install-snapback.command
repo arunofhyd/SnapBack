@@ -1340,7 +1340,7 @@ if [ $? -eq 0 ]; then
     pkill -x "$APP_NAME" >/dev/null 2>&1 || true
     INSTALLED=false
 
-    if [ -w "/Applications" ]; then
+    if [ "$1" != "--modal" ] && [ "$1" != "--gui" ] && [ -w "/Applications" ]; then
         rm -rf "$DEST" 2>/dev/null || true
         if cp -R "$APP_NAME.app" "$DEST" 2>/dev/null; then
             INSTALLED=true
