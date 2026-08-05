@@ -1520,10 +1520,76 @@ class InstallerActionTarget: NSObject {
     }
 }
 
-let oneClickBtn = NSButton(frame: NSRect(x: (winW - 240)/2, y: 20, width: 240, height: 36))
+class AnimatedInstallButton: NSButton {
+    private var trackingArea: NSTrackingArea?
+    private var isHovered = false { didSet { animateState() } }
+    private var isPressed = false { didSet { animateState() } }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setup()
+    }
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+    private func setup() {
+        wantsLayer = true
+        isBordered = false
+        focusRingType = .none
+        layer?.cornerRadius = 10
+        layer?.backgroundColor = NSColor.systemBlue.cgColor
+        contentTintColor = .white
+    }
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let area = trackingArea { removeTrackingArea(area) }
+        let area = NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeAlways], owner: self, userInfo: nil)
+        addTrackingArea(area)
+        trackingArea = area
+    }
+    override func mouseEntered(with event: NSEvent) {
+        isHovered = true
+        NSCursor.pointingHand.set()
+    }
+    override func mouseExited(with event: NSEvent) {
+        isHovered = false
+        NSCursor.arrow.set()
+    }
+    override func mouseDown(with event: NSEvent) {
+        isPressed = true
+        super.mouseDown(with: event)
+    }
+    override func mouseUp(with event: NSEvent) {
+        isPressed = false
+        super.mouseUp(with: event)
+    }
+    private func animateState() {
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.15
+            ctx.allowsImplicitAnimation = true
+            if isPressed {
+                layer?.backgroundColor = NSColor.systemBlue.withAlphaComponent(0.75).cgColor
+                layer?.transform = CATransform3DMakeScale(0.95, 0.95, 1.0)
+            } else if isHovered {
+                layer?.backgroundColor = NSColor(calibratedRed: 0.15, green: 0.52, blue: 1.0, alpha: 1.0).cgColor
+                layer?.transform = CATransform3DMakeScale(1.04, 1.04, 1.0)
+                layer?.shadowColor = NSColor.systemBlue.cgColor
+                layer?.shadowRadius = 10
+                layer?.shadowOpacity = 0.6
+                layer?.shadowOffset = .zero
+            } else {
+                layer?.backgroundColor = NSColor.systemBlue.cgColor
+                layer?.transform = CATransform3DIdentity
+                layer?.shadowOpacity = 0
+            }
+        }
+    }
+}
+
+let oneClickBtn = AnimatedInstallButton(frame: NSRect(x: (winW - 270)/2, y: 20, width: 270, height: 42))
 oneClickBtn.title = "⚡ One-Click Install to /Applications"
-oneClickBtn.bezelStyle = .rounded
-oneClickBtn.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
+oneClickBtn.font = NSFont.systemFont(ofSize: 13, weight: .bold)
 oneClickBtn.target = InstallerActionTarget.self
 oneClickBtn.action = #selector(InstallerActionTarget.oneClickInstall)
 window.contentView?.addSubview(oneClickBtn)
