@@ -1334,15 +1334,6 @@ if [ $? -eq 0 ]; then
     printf "${NEON_GREEN}Secure.${NC}\n"
     
     if [ "$CI" = "true" ]; then
-        cp -R "$APP_NAME.app" "$OLDPWD/"
-        printf "\n   ${NEON_CYAN}CI MODE DETECTED: App copied to $OLDPWD/$APP_NAME.app. Exiting.${NC}\n"
-        exit 0
-    fi
-
-    # --- STEP 6: INSTALLER INTERFACE ---
-    show_step 6 "Forging Interactive Installer..."
-    
-    cat > Installer.swift <<'EOF'
 import Cocoa
 import QuartzCore
 
@@ -1354,12 +1345,21 @@ class DraggableIconView: NSImageView, NSDraggingSource {
     }
 
     override func mouseDown(with event: NSEvent) {
-        guard let url = fileURL else { return }
+        guard let url = fileURL, let originalImg = self.image else { return }
         let pasteboardItem = NSPasteboardItem()
         pasteboardItem.setString(url.path, forType: .fileURL)
         let draggingItem = NSDraggingItem(pasteboardWriter: pasteboardItem)
         let dragRect = self.bounds
-        draggingItem.setDraggingFrame(dragRect, contents: self.image)
+        
+        let dragImg = NSImage(size: bounds.size)
+        dragImg.lockFocus()
+        if let ctx = NSGraphicsContext.current {
+            ctx.imageInterpolation = .high
+        }
+        originalImg.draw(in: bounds)
+        dragImg.unlockFocus()
+
+        draggingItem.setDraggingFrame(dragRect, contents: dragImg)
         beginDraggingSession(with: [draggingItem], event: event, source: self)
     }
 }
@@ -1531,13 +1531,61 @@ animation.repeatCount = .infinity
 arrowView.layer?.add(animation, forKey: "pulse")
 
 // Text Instructions
-let label = NSTextField(labelWithString: "Drag Snap Back to Applications")
-label.font = NSFont.systemFont(ofSize: 16, weight: .medium)
-label.textColor = NSColor.lightGray
+let label = NSTextField(labelWithString: "Drag Snap Back to Applications or click Instant Install below")
+label.font = NSFont.systemFont(ofSize: 13, weight: .regular)
+label.textColor = NSColor.secondaryLabelColor
 label.sizeToFit()
 label.frame.origin.x = (winW - label.frame.width) / 2
-label.frame.origin.y = 50
+label.frame.origin.y = 65
 window.contentView?.addSubview(label)
+
+class InstallerActionTarget: NSObject {
+    @objc static func oneClickInstall() {
+        let sourceURL = URL(fileURLWithPath: Bundle.main.bundlePath.replacingOccurrences(of: "Install __APP_NAME__.app", with: "__APP_NAME__.app"))
+        let destURL = URL(fileURLWithPath: "/Applications/__APP_NAME__.app")
+        do {
+            if FileManager.default.fileExists(atPath: destURL.path) {
+                try FileManager.default.removeItem(at: destURL)
+            }
+            try FileManager.default.copyItem(at: sourceURL, to: destURL)
+            let clean = Process()
+            clean.launchPath = "/usr/bin/xattr"
+            clean.arguments = ["-dr", "com.apple.quarantine", destURL.path]
+            clean.standardOutput = Pipe(); clean.standardError = Pipe()
+            try? clean.run(); clean.waitUntilExit()
+            
+            NSSound(named: "Glass")?.play()
+            let alert = NSAlert()
+            alert.messageText = "Installation Successful"
+            alert.informativeText = "Snap Back has been installed to Applications."
+            alert.addButton(withTitle: "Launch App")
+            alert.addButton(withTitle: "Quit")
+            if alert.runModal() == .alertFirstButtonReturn {
+                NSWorkspace.shared.open(destURL)
+            }
+            NSApplication.shared.terminate(nil)
+        } catch {
+            let sanitizedPath = sourceURL.path.replacingOccurrences(of: "'", with: "'\\''")
+            let script = "do shell script \"cp -R '\(sanitizedPath)' /Applications/\" with administrator privileges"
+            var errorDict: NSDictionary?
+            if let appleScript = NSAppleScript(source: script) {
+                appleScript.executeAndReturnError(&errorDict)
+                if errorDict == nil {
+                    NSWorkspace.shared.open(destURL)
+                    NSApplication.shared.terminate(nil)
+                }
+            }
+        }
+    }
+}
+
+let oneClickBtn = NSButton(frame: NSRect(x: (winW - 240)/2, y: 20, width: 240, height: 36))
+oneClickBtn.title = "⚡ One-Click Install to /Applications"
+oneClickBtn.bezelStyle = .rounded
+oneClickBtn.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
+oneClickBtn.target = InstallerActionTarget.self
+oneClickBtn.action = #selector(InstallerActionTarget.oneClickInstall)
+window.contentView?.addSubview(oneClickBtn)
 
 window.makeKeyAndOrderFront(nil)
 app.activate(ignoringOtherApps: true)
