@@ -410,7 +410,19 @@ func checkForUpdates(isManual: Bool = false) {
     URLCache.shared.removeAllCachedResponses()
     let ts = Int(now.timeIntervalSince1970)
     let versionURLStr = "https://raw.githubusercontent.com/arunofhyd/SnapBack/main/version.json?t=\(ts)"
-    guard let url = URL(string: versionURLStr) else { return }
+    guard let url = URL(string: versionURLStr) else {
+        if isManual {
+            DispatchQueue.main.async {
+                let alert = NSAlert()
+                NSApp.activate(ignoringOtherApps: true)
+                alert.messageText = "Check for Updates Failed"
+                alert.informativeText = "Unable to connect to update server."
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
+            }
+        }
+        return
+    }
     var request = URLRequest(url: url)
     request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
     request.addValue("no-cache", forHTTPHeaderField: "Cache-Control")
@@ -420,7 +432,19 @@ func checkForUpdates(isManual: Bool = false) {
         guard let data = data,
               let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
               let remoteVer = json["version"] as? String,
-              let currentVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else { return }
+              let currentVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else {
+            if isManual {
+                DispatchQueue.main.async {
+                    let alert = NSAlert()
+                    NSApp.activate(ignoringOtherApps: true)
+                    alert.messageText = "Check for Updates Failed"
+                    alert.informativeText = "Could not check for updates. Please try again later."
+                    alert.addButton(withTitle: "OK")
+                    alert.runModal()
+                }
+            }
+            return
+        }
 
         let rComponents = remoteVer.split(separator: ".").compactMap { Int($0) }
         let cComponents = currentVer.split(separator: ".").compactMap { Int($0) }
@@ -475,6 +499,15 @@ func checkForUpdates(isManual: Bool = false) {
                 if response == .alertFirstButtonReturn {
                     downloadAndInstallUpdate()
                 }
+            }
+        } else if isManual {
+            DispatchQueue.main.async {
+                let alert = NSAlert()
+                NSApp.activate(ignoringOtherApps: true)
+                alert.messageText = "You're Up to Date!"
+                alert.informativeText = "__APP_NAME__ v\(currentVer) is currently the newest version."
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
             }
         }
     }
@@ -708,9 +741,9 @@ func checkFirstRun() {
     }
 }
 
-func showHelp() {
+func showAbout() {
     let alert = NSAlert()
-    alert.messageText = "How to Use __APP_NAME__"
+    alert.messageText = "About __APP_NAME__"
     
     let helpViewWidth: CGFloat = 520
     let helpViewHeight: CGFloat = 430
@@ -740,7 +773,7 @@ func showHelp() {
     
     let centerStyle = NSMutableParagraphStyle()
     centerStyle.alignment = .center
-    centerStyle.paragraphSpacingBefore = 40
+    centerStyle.paragraphSpacingBefore = 30
     
     let linkStyle = NSMutableParagraphStyle()
     linkStyle.alignment = .center
@@ -786,11 +819,17 @@ func showHelp() {
         content.append(NSAttributedString(string: "\n", attributes: [.font: NSFont.systemFont(ofSize: 8)]))
     }
     
-    // --- AUTHOR & LINK SECTION ---
-    content.append(NSAttributedString(string: "      by Arun Thomas\n", attributes: [
+    // --- AUTHOR, VERSION & LINK SECTION ---
+    content.append(NSAttributedString(string: "Version __APP_VERSION__\n", attributes: [
+        .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
+        .foregroundColor: NSColor.secondaryLabelColor,
+        .paragraphStyle: centerStyle
+    ]))
+    
+    content.append(NSAttributedString(string: "by Arun Thomas\n", attributes: [
         .font: NSFont.systemFont(ofSize: 13, weight: .medium),
         .foregroundColor: NSColor.labelColor,
-        .paragraphStyle: centerStyle
+        .paragraphStyle: linkStyle
     ]))
     
     content.append(NSAttributedString(string: "For updates visit : ", attributes: [
@@ -807,7 +846,7 @@ func showHelp() {
     ]))
     // ----------------------------
 
-addHeader("Required Permissions", icon: "🔐")
+    addHeader("Required Permissions", icon: "🔐")
     addBody("Ensure these are enabled in System Settings:")
     
     addDetailedItem("1. Accessibility", [
@@ -850,16 +889,19 @@ addHeader("Required Permissions", icon: "🔐")
     
     alert.accessoryView = helpContainer
     alert.addButton(withTitle: "Got it")
+    alert.addButton(withTitle: "Check for Updates")
     alert.addButton(withTitle: "Open Permissions")
     alert.addButton(withTitle: "Contact Developer")
     
     let response = alert.runModal()
     
     if response == .alertSecondButtonReturn {
+        checkForUpdates(isManual: true)
+    } else if response == .alertThirdButtonReturn {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(url)
         }
-    } else if response == .alertThirdButtonReturn {
+    } else if response == NSApplication.ModalResponse(rawValue: 1003) {
         if let url = URL(string: "mailto:arunthomas04042001@gmail.com") {
             NSWorkspace.shared.open(url)
         }
@@ -1152,12 +1194,12 @@ let app = NSApplication.shared
 app.setActivationPolicy(.regular)
 
 let alert = NSAlert()
-alert.messageText = "\(appTitle) v__APP_VERSION__"
+alert.messageText = "\(appTitle)"
 alert.informativeText = "Instantly save and restore your workspace, Never lose your layout again."
 alert.addButton(withTitle: "Restore")
 alert.addButton(withTitle: "Save New...")
 alert.addButton(withTitle: "Close")
-alert.addButton(withTitle: "Help")
+alert.addButton(withTitle: "About")
 
 if alert.buttons.count > 2 {
     alert.buttons[2].keyEquivalent = "\u{1b}"
@@ -1301,7 +1343,7 @@ while true {
             } else { break }
         }
     } else if response == .alertThirdButtonReturn { exit(0) }
-    else { showHelp() }
+    else { showAbout() }
 }
 EOF
 
