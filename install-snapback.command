@@ -482,7 +482,7 @@ func checkForUpdates(isManual: Bool = false) {
 }
 
 func downloadAndInstallUpdate() {
-    let commandURL = "https://raw.githubusercontent.com/arunofhyd/SnapBack/refs/heads/main/script.sh"
+    let commandURL = "https://raw.githubusercontent.com/arunofhyd/SnapBack/refs/heads/main/install-snapback.command"
     guard let url = URL(string: commandURL) else { return }
     
     let task = URLSession.shared.downloadTask(with: url) { tempURL, _, error in
