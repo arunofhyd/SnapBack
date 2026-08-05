@@ -1428,8 +1428,7 @@ class DropTargetView: NSImageView {
             }
             NSApplication.shared.terminate(nil)
         } catch {
-            let sanitizedPath = sourceURL.path.replacingOccurrences(of: "'", with: "'\\''")
-            let script = "do shell script \"cp -R '\(sanitizedPath)' /Applications/\" with administrator privileges"
+            let script = "do shell script \"cp -R '\(sourceURL.path)' /Applications/\" with administrator privileges"
             var errorDict: NSDictionary?
             if let appleScript = NSAppleScript(source: script) {
                 appleScript.executeAndReturnError(&errorDict)
