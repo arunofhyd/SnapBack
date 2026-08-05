@@ -397,9 +397,18 @@ func showScriptError(details: String?) {
     }
 }
 
-func checkForUpdates() {
+func checkForUpdates(isManual: Bool = false) {
+    let now = Date()
+    if !isManual {
+        if let lastCheck = UserDefaults.standard.object(forKey: "lastUpdateCheckDate") as? Date,
+           now.timeIntervalSince(lastCheck) < 86400 {
+            return // Only check once per 24 hours on automatic launch
+        }
+    }
+    UserDefaults.standard.set(now, forKey: "lastUpdateCheckDate")
+
     URLCache.shared.removeAllCachedResponses()
-    let ts = Int(Date().timeIntervalSince1970)
+    let ts = Int(now.timeIntervalSince1970)
     let versionURLStr = "https://raw.githubusercontent.com/arunofhyd/SnapBack/main/version.json?t=\(ts)"
     guard let url = URL(string: versionURLStr) else { return }
     var request = URLRequest(url: url)
