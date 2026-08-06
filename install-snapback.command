@@ -1509,6 +1509,39 @@ appIconView.fileURL = URL(fileURLWithPath: appPath)
 appIconView.imageScaling = .scaleProportionallyUpOrDown
 window.contentView?.addSubview(appIconView)
 
+// Gradient Arrow View (Fading Stem Arrow)
+class GradientArrowView: NSView {
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        let w = bounds.width
+        let h = bounds.height
+        let midY = h / 2.0
+        
+        let stemH: CGFloat = 10
+        let headH: CGFloat = 26
+        let headW: CGFloat = 20
+        let stemR = w - headW
+        
+        let path = NSBezierPath()
+        path.move(to: NSPoint(x: 0, y: midY - stemH/2))
+        path.line(to: NSPoint(x: stemR, y: midY - stemH/2))
+        path.line(to: NSPoint(x: stemR, y: midY - headH/2))
+        path.line(to: NSPoint(x: w, y: midY))
+        path.line(to: NSPoint(x: stemR, y: midY + headH/2))
+        path.line(to: NSPoint(x: stemR, y: midY + stemH/2))
+        path.line(to: NSPoint(x: 0, y: midY + stemH/2))
+        path.close()
+        
+        let startColor = NSColor.labelColor.withAlphaComponent(0.0)
+        let endColor = NSColor.labelColor.withAlphaComponent(0.50)
+        let gradient = NSGradient(starting: startColor, ending: endColor)
+        gradient?.draw(in: path, angle: 0)
+    }
+}
+
+let arrowView = GradientArrowView(frame: NSRect(x: (winW - 70)/2, y: (winH - iconSize)/2 + 20 + iconSize/2 - 18, width: 70, height: 36))
+window.contentView?.addSubview(arrowView)
+
 let folderIconView = DropTargetView(frame: NSRect(x: winW - 80 - iconSize, y: (winH - iconSize)/2 + 20, width: iconSize, height: iconSize))
 folderIconView.image = NSWorkspace.shared.icon(forFile: "/Applications")
 folderIconView.imageScaling = .scaleProportionallyUpOrDown
