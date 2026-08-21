@@ -1,7 +1,12 @@
 #!/bin/bash
 
 # --- CONFIGURATION ---
-APP_VERSION="1.0.5"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+if [ -f "$SCRIPT_DIR/version.json" ]; then
+    APP_VERSION=$(python3 -c "import json; print(json.load(open('$SCRIPT_DIR/version.json'))['version'])" 2>/dev/null || echo "1.0.5")
+else
+    APP_VERSION="1.0.5"
+fi
 APP_NAME="Snap Back"
 
 # --- CYBERPUNK THEME COLORS ---
@@ -1487,27 +1492,50 @@ class DropTargetView: NSImageView {
 class InstallerWindow: NSWindow {
     override init(contentRect: NSRect, styleMask style: NSWindow.StyleMask, backing backingStoreType: NSWindow.BackingStoreType, defer flag: Bool) {
         super.init(contentRect: contentRect, styleMask: [.titled, .closable, .miniaturizable], backing: backingStoreType, defer: flag)
-        self.title = "__APP_NAME__ v__APP_VERSION__"
+        self.title = "Install __APP_NAME__"
         self.center()
-        self.backgroundColor = NSColor(white: 0.15, alpha: 1.0)
     }
 }
 
 let app = NSApplication.shared
 app.setActivationPolicy(.regular)
 
-let winW: CGFloat = 600, winH: CGFloat = 350
+let winW: CGFloat = 620, winH: CGFloat = 410
 let window = InstallerWindow(contentRect: NSRect(x: 0, y: 0, width: winW, height: winH), styleMask: [.titled, .closable], backing: .buffered, defer: false)
 
+let bg = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: winW, height: winH))
+bg.material = .windowBackground; bg.state = .active
+window.contentView = bg
+
+let titleLabel = NSTextField(labelWithString: "Install __APP_NAME__")
+titleLabel.frame = NSRect(x: 0, y: winH - 65, width: winW, height: 30)
+titleLabel.alignment = .center
+titleLabel.font = NSFont.systemFont(ofSize: 22, weight: .bold)
+bg.addSubview(titleLabel)
+
+let subLabel = NSTextField(labelWithString: "Drag __APP_NAME__ to Applications or click Instant Install below")
+subLabel.frame = NSRect(x: 0, y: winH - 90, width: winW, height: 20)
+subLabel.alignment = .center
+subLabel.font = NSFont.systemFont(ofSize: 13)
+subLabel.textColor = .secondaryLabelColor
+bg.addSubview(subLabel)
+
 let iconSize: CGFloat = 128
-let appIconView = DraggableIconView(frame: NSRect(x: 80, y: (winH - iconSize)/2 + 20, width: iconSize, height: iconSize))
+let midY: CGFloat = 145
+let appIconView = DraggableIconView(frame: NSRect(x: 90, y: midY, width: iconSize, height: iconSize))
 let appPath = Bundle.main.bundlePath.replacingOccurrences(of: "Install __APP_NAME__.app", with: "__APP_NAME__.app")
 if let image = NSImage(contentsOfFile: appPath + "/Contents/Resources/AppIcon.icns") {
     appIconView.image = image
 }
 appIconView.fileURL = URL(fileURLWithPath: appPath)
 appIconView.imageScaling = .scaleProportionallyUpOrDown
-window.contentView?.addSubview(appIconView)
+bg.addSubview(appIconView)
+
+let appLabel = NSTextField(labelWithString: "__APP_NAME__")
+appLabel.frame = NSRect(x: 90, y: midY - 26, width: iconSize, height: 18)
+appLabel.alignment = .center
+appLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+bg.addSubview(appLabel)
 
 // Gradient Arrow View (Fading Stem Arrow)
 class GradientArrowView: NSView {
@@ -1539,21 +1567,21 @@ class GradientArrowView: NSView {
     }
 }
 
-let arrowView = GradientArrowView(frame: NSRect(x: (winW - 70)/2, y: (winH - iconSize)/2 + 20 + iconSize/2 - 18, width: 70, height: 36))
-window.contentView?.addSubview(arrowView)
+let arrowView = GradientArrowView(frame: NSRect(x: (winW - 70)/2, y: midY + iconSize/2 - 18, width: 70, height: 36))
+bg.addSubview(arrowView)
 
-let folderIconView = DropTargetView(frame: NSRect(x: winW - 80 - iconSize, y: (winH - iconSize)/2 + 20, width: iconSize, height: iconSize))
+let folderIconView = DropTargetView(frame: NSRect(x: winW - 90 - iconSize, y: midY, width: iconSize, height: iconSize))
 folderIconView.image = NSWorkspace.shared.icon(forFile: "/Applications")
 folderIconView.imageScaling = .scaleProportionallyUpOrDown
-window.contentView?.addSubview(folderIconView)
+bg.addSubview(folderIconView)
 
-let label = NSTextField(labelWithString: "Drag Snap Back to Applications or click Instant Install below")
-label.font = NSFont.systemFont(ofSize: 13, weight: .regular)
-label.textColor = NSColor.secondaryLabelColor
-label.sizeToFit()
-label.frame.origin.x = (winW - label.frame.width) / 2
-label.frame.origin.y = 65
-window.contentView?.addSubview(label)
+let appsLabel = NSTextField(labelWithString: "Applications")
+appsLabel.frame = NSRect(x: winW - 90 - iconSize, y: midY - 26, width: iconSize, height: 18)
+appsLabel.alignment = .center
+appsLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+bg.addSubview(appsLabel)
+
+
 
 class InstallerActionTarget: NSObject {
     @objc static func oneClickInstall() {
