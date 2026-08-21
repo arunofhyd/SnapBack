@@ -3,9 +3,9 @@
 # --- CONFIGURATION ---
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 if [ -f "$SCRIPT_DIR/version.json" ]; then
-    APP_VERSION=$(python3 -c "import json; print(json.load(open('$SCRIPT_DIR/version.json'))['version'])" 2>/dev/null || echo "1.0.6")
+    APP_VERSION=$(python3 -c "import json; print(json.load(open('$SCRIPT_DIR/version.json'))['version'])" 2>/dev/null || echo "1.0.7")
 else
-    APP_VERSION="1.0.6"
+    APP_VERSION="1.0.7"
 fi
 APP_NAME="Snap Back"
 
@@ -520,16 +520,18 @@ func checkForUpdates(isManual: Bool = false) {
 }
 
 func downloadAndInstallUpdate() {
-    let commandURL = "https://raw.githubusercontent.com/arunofhyd/SnapBack/refs/heads/main/install-snapback.command"
+    let commandURL = "https://raw.githubusercontent.com/arunofhyd/SnapBack/main/install-snapback.command"
     guard let url = URL(string: commandURL) else { return }
     
-    let task = URLSession.shared.downloadTask(with: url) { tempURL, _, error in
+    let task = URLSession.shared.downloadTask(with: url) { tempURL, response, error in
         DispatchQueue.main.async {
-            if let error = error {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            if error != nil || statusCode != 200 {
                 let err = NSAlert()
                 err.alertStyle = .warning
                 err.messageText = "Download Failed"
-                err.informativeText = "Could not download the update:\n\(error.localizedDescription)\n\nPlease check your internet connection and try again."
+                let reason = error?.localizedDescription ?? "Server returned HTTP \(statusCode)"
+                err.informativeText = "Could not download the update:\n\(reason)\n\nPlease check your internet connection and try again."
                 err.addButton(withTitle: "OK")
                 err.runModal()
                 return

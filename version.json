@@ -1,6 +1,13 @@
 {
-  "version": "1.0.6",
+  "version": "1.0.7",
   "changelog": [
+    {
+      "version": "1.0.7",
+      "date": "2026-08-21",
+      "changes": [
+        "In-App Auto-Update Fix: Added backwards-compatible script.sh alias and validated HTTP 200 responses to prevent corrupted download handling."
+      ]
+    },
     {
       "version": "1.0.6",
       "date": "2026-08-21",
