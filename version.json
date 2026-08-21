@@ -1,6 +1,13 @@
 {
-  "version": "1.0.5",
+  "version": "1.0.6",
   "changelog": [
+    {
+      "version": "1.0.6",
+      "date": "2026-08-21",
+      "changes": [
+        "Single Source of Truth Installer: Updated installer to read and parse version directly from version.json."
+      ]
+    },
     {
       "version": "1.0.5",
       "date": "2026-08-05",

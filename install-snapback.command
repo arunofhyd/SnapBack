@@ -3,9 +3,9 @@
 # --- CONFIGURATION ---
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 if [ -f "$SCRIPT_DIR/version.json" ]; then
-    APP_VERSION=$(python3 -c "import json; print(json.load(open('$SCRIPT_DIR/version.json'))['version'])" 2>/dev/null || echo "1.0.5")
+    APP_VERSION=$(python3 -c "import json; print(json.load(open('$SCRIPT_DIR/version.json'))['version'])" 2>/dev/null || echo "1.0.6")
 else
-    APP_VERSION="1.0.5"
+    APP_VERSION="1.0.6"
 fi
 APP_NAME="Snap Back"
 
