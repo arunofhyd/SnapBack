@@ -3,9 +3,9 @@
 # --- CONFIGURATION ---
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 if [ -f "$SCRIPT_DIR/version.json" ]; then
-    APP_VERSION=$(python3 -c "import json; print(json.load(open('$SCRIPT_DIR/version.json'))['version'])" 2>/dev/null || echo "1.0.7")
+    APP_VERSION=$(python3 -c "import json; print(json.load(open('$SCRIPT_DIR/version.json'))['version'])" 2>/dev/null || echo "1.0.8")
 else
-    APP_VERSION="1.0.7"
+    APP_VERSION="1.0.8"
 fi
 APP_NAME="Snap Back"
 
@@ -303,22 +303,30 @@ struct UpdateChangelogView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
-            Text(changelog)
-                .font(.system(size: 12, weight: .regular))
-                .foregroundColor(.primary)
-                .lineSpacing(3)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(10)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(changelog)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(Color(NSColor.labelColor))
+                    .lineSpacing(3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(12)
         }
-        .frame(width: 340, height: 140)
+        .frame(width: 360, height: 150)
         .background(Color(NSColor.controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color(NSColor.separatorColor).opacity(0.4), lineWidth: 1)
         )
     }
+}
+
+func createChangelogView(changelog: String) -> NSView {
+    let hostingView = NSHostingView(rootView: UpdateChangelogView(changelog: changelog))
+    hostingView.frame = NSRect(x: 0, y: 0, width: 360, height: 150)
+    return hostingView
 }
 
 // --- CONFIGURATION ---
@@ -402,6 +410,19 @@ func showScriptError(details: String?) {
     }
 }
 
+var aboutUpdateBtn: NSButton?
+
+func setUpdateLoading(_ loading: Bool) {
+    DispatchQueue.main.async {
+        guard let btn = aboutUpdateBtn else { return }
+        btn.isEnabled = !loading
+        btn.attributedTitle = NSAttributedString(string: loading ? "Checking..." : "Updates", attributes: [
+            .foregroundColor: NSColor.white,
+            .font: NSFont.systemFont(ofSize: 12.5, weight: .medium)
+        ])
+    }
+}
+
 func checkForUpdates(isManual: Bool = false) {
     let now = Date()
     if !isManual {
@@ -411,11 +432,13 @@ func checkForUpdates(isManual: Bool = false) {
         }
     }
     UserDefaults.standard.set(now, forKey: "lastUpdateCheckDate")
+    setUpdateLoading(true)
 
     URLCache.shared.removeAllCachedResponses()
     let ts = Int(now.timeIntervalSince1970)
     let versionURLStr = "https://raw.githubusercontent.com/arunofhyd/SnapBack/main/version.json?t=\(ts)"
     guard let url = URL(string: versionURLStr) else {
+        setUpdateLoading(false)
         if isManual {
             DispatchQueue.main.async {
                 let alert = NSAlert()
@@ -434,6 +457,7 @@ func checkForUpdates(isManual: Bool = false) {
     request.addValue("no-cache", forHTTPHeaderField: "Pragma")
 
     let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        setUpdateLoading(false)
         guard let data = data,
               let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
               let remoteVer = json["version"] as? String,
@@ -488,13 +512,13 @@ func checkForUpdates(isManual: Bool = false) {
             DispatchQueue.main.async {
                 let alert = NSAlert()
                 NSApp.activate(ignoringOtherApps: true)
-                alert.messageText = "SnapBack v\(remoteVer) is available"
-                alert.informativeText = "You have v\(currentVer). Here's what's new:"
+                alert.icon = NSImage(named: "AppIcon") ?? NSApp.applicationIconImage
+                alert.messageText = "SnapBack \(remoteVer) is available"
+                let cur = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? currentVer
+                alert.informativeText = "You have v\(cur). Here's what's new:"
                 
                 if !fullChangelog.isEmpty {
-                    let hosting = NSHostingView(rootView: UpdateChangelogView(changelog: fullChangelog))
-                    hosting.frame = NSRect(x: 0, y: 0, width: 340, height: 140)
-                    alert.accessoryView = hosting
+                    alert.accessoryView = createChangelogView(changelog: fullChangelog)
                 }
                 
                 alert.addButton(withTitle: "Update Now")
@@ -509,8 +533,10 @@ func checkForUpdates(isManual: Bool = false) {
             DispatchQueue.main.async {
                 let alert = NSAlert()
                 NSApp.activate(ignoringOtherApps: true)
-                alert.messageText = "You're Up to Date!"
-                alert.informativeText = "__APP_NAME__ v\(currentVer) is currently the newest version."
+                alert.icon = NSImage(named: "AppIcon") ?? NSApp.applicationIconImage
+                alert.messageText = "You're up to date"
+                let cur = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? currentVer
+                alert.informativeText = "__APP_NAME__ v\(cur) is the latest version."
                 alert.addButton(withTitle: "OK")
                 alert.runModal()
             }
@@ -563,356 +589,524 @@ func downloadAndInstallUpdate() {
     task.resume()
 }
 
+var permissionsWindow: NSWindow?
+var permissionButtons: [NSButton] = []
+var permissionsTimer: Timer?
+
+class PermissionsActionHandler: NSObject, NSWindowDelegate {
+    static let shared = PermissionsActionHandler()
+
+    @objc func timerFired() {
+        checkPermissionsStatus()
+    }
+
+    @objc func openScreenRecording() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+            NSWorkspace.shared.open(url)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            checkPermissionsStatus()
+        }
+    }
+
+    @objc func openAccessibility() {
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(options)
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            checkPermissionsStatus()
+        }
+    }
+
+    @objc func openAutomation() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
+            NSWorkspace.shared.open(url)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            checkPermissionsStatus()
+        }
+    }
+
+    @objc func closePermissions() {
+        permissionsTimer?.invalidate()
+        permissionsTimer = nil
+        permissionButtons = []
+        UserDefaults.standard.set(true, forKey: "HasShownFirstRunPermissions")
+        if let win = permissionsWindow {
+            NSApp.stopModal()
+            win.close()
+            permissionsWindow = nil
+        }
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        permissionsTimer?.invalidate()
+        permissionsTimer = nil
+        permissionButtons = []
+        NSApp.stopModal()
+        permissionsWindow = nil
+    }
+}
+
+func checkPermissionsStatus() {
+    guard permissionsWindow != nil, permissionButtons.count >= 3 else { return }
+
+    // Row 0: Screen Recording
+    var screenOk = false
+    if #available(macOS 10.15, *) {
+        screenOk = CGPreflightScreenCaptureAccess()
+    } else {
+        screenOk = true
+    }
+    updatePermButton(permissionButtons[0], isGranted: screenOk)
+
+    // Row 1: Accessibility
+    let axOk = AXIsProcessTrusted()
+    updatePermButton(permissionButtons[1], isGranted: axOk)
+}
+
+func updatePermButton(_ btn: NSButton, isGranted: Bool) {
+    if isGranted {
+        if btn.title != "✓" {
+            btn.title = "✓"
+            btn.font = NSFont.systemFont(ofSize: 13, weight: .bold)
+            btn.contentTintColor = .systemGreen
+            btn.toolTip = "Granted (Click to open settings)"
+        }
+    } else {
+        if btn.title != "Open" {
+            btn.title = "Open"
+            btn.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+            btn.contentTintColor = nil
+            btn.toolTip = "Click to open settings"
+        }
+    }
+}
+
+func showPermissionsGuide(isFirstLaunch: Bool = false) {
+    if permissionsWindow != nil {
+        permissionsWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        return
+    }
+
+    struct PermItem {
+        let symbol: String
+        let color: NSColor
+        let title: String
+        let desc: String
+        let action: Selector
+    }
+
+    let width: CGFloat = 460
+    let height: CGFloat = 340
+
+    let win = NSWindow(
+        contentRect: NSRect(x: 0, y: 0, width: width, height: height),
+        styleMask: [.titled, .closable, .fullSizeContentView],
+        backing: .buffered, defer: false
+    )
+    win.titleVisibility = .hidden
+    win.titlebarAppearsTransparent = true
+    win.isMovableByWindowBackground = true
+    win.standardWindowButton(.miniaturizeButton)?.isHidden = true
+    win.standardWindowButton(.zoomButton)?.isHidden = true
+    win.center()
+    win.isReleasedWhenClosed = false
+    win.level = .floating
+
+    let bg = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: width, height: height))
+    bg.material = .popover
+    bg.blendingMode = .behindWindow
+    bg.state = .active
+
+    // App Icon
+    let icon = NSImageView(frame: NSRect(x: (width - 56)/2, y: height - 72, width: 56, height: 56))
+    icon.image = NSImage(named: "AppIcon") ?? NSApp.applicationIconImage
+    icon.imageScaling = .scaleProportionallyUpOrDown
+    bg.addSubview(icon)
+
+    // Title & Subtitle
+    let title = NSTextField(labelWithString: "Permissions & Setup")
+    title.font = NSFont.systemFont(ofSize: 20, weight: .bold)
+    title.alignment = .center
+    title.frame = NSRect(x: 0, y: height - 100, width: width, height: 24)
+    bg.addSubview(title)
+
+    let sub = NSTextField(labelWithString: "Configure SnapBack for full system control")
+    sub.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+    sub.textColor = .secondaryLabelColor
+    sub.alignment = .center
+    sub.frame = NSRect(x: 16, y: height - 120, width: width - 32, height: 16)
+    bg.addSubview(sub)
+
+    let items: [PermItem] = [
+        PermItem(
+            symbol: "record.circle.fill",
+            color: .systemRed,
+            title: "Screen Recording (Required)",
+            desc: "Allows capturing window layout previews and coordinates.",
+            action: #selector(PermissionsActionHandler.openScreenRecording)
+        ),
+        PermItem(
+            symbol: "hand.point.up.left.fill",
+            color: .systemPurple,
+            title: "Accessibility (Required)",
+            desc: "Allows moving, resizing, and restoring open windows.",
+            action: #selector(PermissionsActionHandler.openAccessibility)
+        ),
+        PermItem(
+            symbol: "safari.fill",
+            color: .systemBlue,
+            title: "Automation / Browser Tabs",
+            desc: "Allows capturing and restoring open browser tabs.",
+            action: #selector(PermissionsActionHandler.openAutomation)
+        )
+    ]
+
+    let rowHeight: CGFloat = 48
+    let rowYPositions: [CGFloat] = [156, 102, 48]
+
+    permissionButtons = []
+
+    for (idx, item) in items.enumerated() {
+        let rowY = rowYPositions[idx]
+
+        // Icon
+        let symView = NSImageView(frame: NSRect(x: 32, y: rowY + (rowHeight - 26)/2, width: 26, height: 26))
+        let symCfg = NSImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+        symView.image = NSImage(systemSymbolName: item.symbol, accessibilityDescription: nil)?.withSymbolConfiguration(symCfg)
+        symView.contentTintColor = item.color
+        bg.addSubview(symView)
+
+        // Text
+        let textWidth = width - 68 - 115
+        let hLabel = NSTextField(labelWithString: item.title)
+        hLabel.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
+        hLabel.frame = NSRect(x: 68, y: rowY + 24, width: textWidth, height: 18)
+        bg.addSubview(hLabel)
+
+        let dLabel = NSTextField(labelWithString: item.desc)
+        dLabel.font = NSFont.systemFont(ofSize: 11.5, weight: .regular)
+        dLabel.textColor = .secondaryLabelColor
+        dLabel.lineBreakMode = .byTruncatingTail
+        dLabel.frame = NSRect(x: 68, y: rowY + 4, width: textWidth, height: 18)
+        bg.addSubview(dLabel)
+
+        // Action Button
+        let btn = NSButton(title: "Open", target: PermissionsActionHandler.shared, action: item.action)
+        btn.frame = NSRect(x: width - 32 - 70, y: rowY + (rowHeight - 28)/2, width: 70, height: 28)
+        btn.bezelStyle = .rounded
+        btn.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        bg.addSubview(btn)
+        permissionButtons.append(btn)
+    }
+
+    // Done Button (Crisp contrast pill)
+    let doneBtn = NSButton(title: "Done", target: PermissionsActionHandler.shared, action: #selector(PermissionsActionHandler.closePermissions))
+    doneBtn.frame = NSRect(x: (width - 150)/2, y: 10, width: 150, height: 32)
+    doneBtn.isBordered = false
+    doneBtn.wantsLayer = true
+    doneBtn.layer?.backgroundColor = NSColor.white.cgColor
+    doneBtn.layer?.cornerRadius = 16
+    doneBtn.layer?.masksToBounds = true
+    doneBtn.attributedTitle = NSAttributedString(string: "Done", attributes: [
+        .foregroundColor: NSColor.black,
+        .font: NSFont.systemFont(ofSize: 13, weight: .semibold)
+    ])
+    bg.addSubview(doneBtn)
+
+    win.delegate = PermissionsActionHandler.shared
+    win.contentView = bg
+    win.makeKeyAndOrderFront(nil)
+    NSApp.activate(ignoringOtherApps: true)
+    permissionsWindow = win
+
+    // Initial check and auto-polling timer for live updates
+    checkPermissionsStatus()
+    permissionsTimer?.invalidate()
+    let t = Timer(timeInterval: 0.8, target: PermissionsActionHandler.shared, selector: #selector(PermissionsActionHandler.timerFired), userInfo: nil, repeats: true)
+    RunLoop.current.add(t, forMode: .common)
+    permissionsTimer = t
+
+    NSApp.runModal(for: win)
+}
+
 func checkFirstRun() {
     let key = "HasShownFirstRunPermissions"
     let defaults = UserDefaults.standard
-    
-    // Check permissions first - if all good, set flag and skip
     let axTrusted = AXIsProcessTrusted()
     var screenTrusted = false
     if #available(macOS 10.15, *) {
         screenTrusted = CGPreflightScreenCaptureAccess()
     } else {
-        screenTrusted = true // Fallback for older macOS
+        screenTrusted = true
     }
     
-    if axTrusted && screenTrusted {
-        defaults.set(true, forKey: key)
-        return
-    }
-    
-    // Show window if permissions are missing OR flag is not set (enforce permissions)
     if !axTrusted || !screenTrusted || !defaults.bool(forKey: key) {
-        
-        // Custom Window for Timer Logic - RESIZED for better fit
-        let winWidth: CGFloat = 480
-        let winHeight: CGFloat = 400
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: winWidth, height: winHeight),
-            styleMask: [.titled],
-            backing: .buffered,
-            defer: false
-        )
-        window.center()
-        window.title = "__APP_NAME__"
-        
-        let contentView = NSView(frame: NSRect(x: 0, y: 0, width: winWidth, height: winHeight))
-        window.contentView = contentView
-        
-        // Icon (Top Left)
-        let iconView = NSImageView(frame: NSRect(x: 30, y: winHeight - 85, width: 64, height: 64))
-        iconView.image = NSApplication.shared.applicationIconImage
-        contentView.addSubview(iconView)
-        
-        // Title (Right of Icon)
-        let titleLabel = NSTextField(labelWithString: "Welcome to __APP_NAME__")
-        titleLabel.font = NSFont.boldSystemFont(ofSize: 18)
-        titleLabel.frame = NSRect(x: 110, y: winHeight - 65, width: 350, height: 26)
-        contentView.addSubview(titleLabel)
-        
-        // Description (Main Body)
-        let descLabel = NSTextField(labelWithString: "")
-        descLabel.stringValue = "To save and restore window layouts, this app requires:\n\n• Accessibility: To move/resize windows.\n• Screen Recording: To capture layout previews.\n\nPlease enable these in System Settings (requires Admin privileges).\n\n⚠️ If already checked: Please remove (-) and re-add (+) __APP_NAME__ in System Settings under Accessibility and Screen Recording to reset permissions after an app update."
-        descLabel.font = NSFont.systemFont(ofSize: 13)
-        // Adjusted Frame to fit text without clipping
-        descLabel.frame = NSRect(x: 35, y: 110, width: 420, height: 190)
-        descLabel.cell?.wraps = true
-        contentView.addSubview(descLabel)
-        
-        // Buttons
-        let btnWidth: CGFloat = 200
-        let btnHeight: CGFloat = 32
-        
-        let accessBtn = NSButton(title: "Open Accessibility", target: nil, action: nil)
-        accessBtn.frame = NSRect(x: 35, y: 65, width: btnWidth, height: btnHeight)
-        accessBtn.bezelStyle = .rounded
-        
-        let screenBtn = NSButton(title: "Open Screen Recording", target: nil, action: nil)
-        screenBtn.frame = NSRect(x: 250, y: 65, width: btnWidth, height: btnHeight)
-        screenBtn.bezelStyle = .rounded
-        
-        let quitBtn = NSButton(title: "Quit App", target: nil, action: nil)
-        quitBtn.frame = NSRect(x: 35, y: 20, width: 100, height: btnHeight)
-        quitBtn.bezelStyle = .rounded
-        
-        let continueBtn = NSButton(title: "Continue", target: nil, action: nil)
-        continueBtn.frame = NSRect(x: 350, y: 20, width: 100, height: btnHeight)
-        continueBtn.bezelStyle = .rounded
-        continueBtn.isEnabled = false
-        
-        contentView.addSubview(accessBtn)
-        contentView.addSubview(screenBtn)
-        contentView.addSubview(quitBtn)
-        contentView.addSubview(continueBtn)
-        
-        // Logic Class
-        class FirstRunHandler: NSObject {
-            var timer: Timer?
-            var window: NSWindow
-            var continueBtn: NSButton
-            var accessBtn: NSButton
-            var screenBtn: NSButton
-            
-            init(window: NSWindow, continueBtn: NSButton, accessBtn: NSButton, screenBtn: NSButton) {
-                self.window = window
-                self.continueBtn = continueBtn
-                self.accessBtn = accessBtn
-                self.screenBtn = screenBtn
-                super.init()
-                
-                // IMPORTANT: Add timer to common mode to ensure it fires during modal run loop
-                let t = Timer(timeInterval: 1.0, target: self, selector: #selector(tick), userInfo: nil, repeats: true)
-                RunLoop.current.add(t, forMode: .common)
-                self.timer = t
-                
-                self.checkPermissions() // Initial check
-            }
-            
-            @objc func tick() {
-                // Poll permissions every second
-                let allEnabled = checkPermissions()
-                
-                if allEnabled {
-                    continueBtn.isEnabled = true
-                } else {
-                    continueBtn.isEnabled = false
-                }
-            }
-            
-            @discardableResult
-            func checkPermissions() -> Bool {
-                var axOk = false
-                var screenOk = false
-                
-                // Check Accessibility
-                if AXIsProcessTrusted() {
-                    axOk = true
-                    accessBtn.title = "Accessibility: Enabled ✅"
-                    // accessBtn.bezelColor = NSColor.systemGreen 
-                    // Note: bezelColor might not show on all button styles, title update is safer
-                    accessBtn.isEnabled = false
-                } else {
-                     accessBtn.title = "Open Accessibility"
-                     accessBtn.isEnabled = true
-                }
+        showPermissionsGuide(isFirstLaunch: true)
+    }
+}
 
-                // Check Screen Recording
-                if #available(macOS 10.15, *) {
-                    if CGPreflightScreenCaptureAccess() {
-                        screenOk = true
-                        screenBtn.title = "Screen Rec: Enabled ✅"
-                        screenBtn.isEnabled = false
-                    } else {
-                         screenBtn.title = "Open Screen Recording"
-                         screenBtn.isEnabled = true
-                    }
-                } else { screenOk = true }
-                
-                return axOk && screenOk
-            }
-            
-            @objc func openAccess(_ sender: Any) {
-                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                    NSWorkspace.shared.open(url)
-                }
-            }
-            
-            @objc func openScreen(_ sender: Any) {
-                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
-                    NSWorkspace.shared.open(url)
-                }
-            }
-            
-            @objc func continueClicked(_ sender: Any) {
-                timer?.invalidate()
-                NSApplication.shared.stopModal()
-                window.close()
-            }
-            
-            @objc func quitClicked(_ sender: Any) {
-                exit(0)
-            }
+var aboutWindow: NSWindow?
+
+class AboutActionHandler: NSObject, NSWindowDelegate {
+    static let shared = AboutActionHandler()
+    
+    @objc func contactDev() {
+        let subject = "SnapBack feedback"
+        let encoded = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? subject
+        if let url = URL(string: "mailto:arunthomas04042001@gmail.com?subject=\(encoded)") {
+            NSWorkspace.shared.open(url)
         }
-        
-        let frHandler = FirstRunHandler(window: window, continueBtn: continueBtn, accessBtn: accessBtn, screenBtn: screenBtn)
-        accessBtn.target = frHandler; accessBtn.action = #selector(FirstRunHandler.openAccess(_:))
-        screenBtn.target = frHandler; screenBtn.action = #selector(FirstRunHandler.openScreen(_:))
-        continueBtn.target = frHandler; continueBtn.action = #selector(FirstRunHandler.continueClicked(_:))
-        quitBtn.target = frHandler; quitBtn.action = #selector(FirstRunHandler.quitClicked(_:))
-        
-        NSApplication.shared.activate(ignoringOtherApps: true)
-        NSApplication.shared.runModal(for: window)
-        
-        // Only set flag if we actually passed the checks (which we did if we are here)
-        defaults.set(true, forKey: key)
+    }
+    
+    @objc func openGit() {
+        if let url = URL(string: "https://github.com/arunofhyd/SnapBack") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    @objc func checkUpdates() {
+        checkForUpdates(isManual: true)
+    }
+    
+    @objc func closeAboutWin() {
+        if let win = aboutWindow {
+            NSApp.stopModal()
+            win.close()
+            aboutWindow = nil
+        }
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        NSApp.stopModal()
+        aboutUpdateBtn = nil
+        aboutWindow = nil
     }
 }
 
 func showAbout() {
-    let alert = NSAlert()
-    alert.messageText = "About __APP_NAME__"
-    
-    let helpViewWidth: CGFloat = 520
-    let helpViewHeight: CGFloat = 430
-    let helpContainer = NSView(frame: NSRect(x: 0, y: 0, width: helpViewWidth, height: helpViewHeight))
-    
-    let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: helpViewWidth, height: helpViewHeight))
-    scrollView.hasVerticalScroller = true
-    scrollView.drawsBackground = false
-    
-    let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: helpViewWidth - 15, height: helpViewHeight))
-    textView.isEditable = false
-    textView.isRichText = true
-    textView.drawsBackground = false
-    textView.textContainer?.lineFragmentPadding = 0
-    
-    let headerFont = NSFont.boldSystemFont(ofSize: 14)
-    let bodyFont = NSFont.systemFont(ofSize: 13)
-    let codeFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
-    
-    let headerStyle = NSMutableParagraphStyle()
-    headerStyle.paragraphSpacing = 6
-    headerStyle.paragraphSpacingBefore = 12
-    
-    let bodyStyle = NSMutableParagraphStyle()
-    bodyStyle.paragraphSpacing = 20
-    bodyStyle.lineHeightMultiple = 1.2
-    
-    let centerStyle = NSMutableParagraphStyle()
-    centerStyle.alignment = .center
-    centerStyle.paragraphSpacingBefore = 30
-    
-    let linkStyle = NSMutableParagraphStyle()
-    linkStyle.alignment = .center
-    linkStyle.paragraphSpacingBefore = 2
-    
-    let content = NSMutableAttributedString()
-    
-    func addHeader(_ text: String, icon: String? = nil) {
-        let titleText = icon != nil ? "\(icon!)  \(text)" : text
-        content.append(NSAttributedString(string: titleText + "\n", attributes: [
-            .font: headerFont, 
-            .foregroundColor: NSColor.labelColor,
-            .paragraphStyle: headerStyle
-        ]))
+    if aboutWindow != nil {
+        aboutWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        return
     }
-    
-    func addBody(_ text: String) {
-        content.append(NSAttributedString(string: text + "\n", attributes: [
-            .font: bodyFont, 
-            .foregroundColor: NSColor.labelColor, 
-            .paragraphStyle: bodyStyle
-        ]))
-    }
-    
-    func addDetailedItem(_ title: String, _ items: [String]) {
-        content.append(NSAttributedString(string: title + "\n", attributes: [
-            .font: NSFont.boldSystemFont(ofSize: 13),
-            .foregroundColor: NSColor.labelColor,
-            .paragraphStyle: bodyStyle
-        ]))
-        
-        let listStyle = NSMutableParagraphStyle()
-        listStyle.paragraphSpacing = 4
-        listStyle.headIndent = 15
-        
-        for item in items {
-             content.append(NSAttributedString(string: item + "\n", attributes: [
-                .font: NSFont.systemFont(ofSize: 12),
-                .foregroundColor: NSColor.labelColor,
-                .paragraphStyle: listStyle
-            ]))
-        }
-        content.append(NSAttributedString(string: "\n", attributes: [.font: NSFont.systemFont(ofSize: 8)]))
-    }
-    
-    // --- AUTHOR, VERSION & LINK SECTION ---
-    content.append(NSAttributedString(string: "Version __APP_VERSION__\n", attributes: [
-        .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
-        .foregroundColor: NSColor.secondaryLabelColor,
-        .paragraphStyle: centerStyle
-    ]))
-    
-    content.append(NSAttributedString(string: "by Arun Thomas\n", attributes: [
-        .font: NSFont.systemFont(ofSize: 13, weight: .medium),
-        .foregroundColor: NSColor.labelColor,
-        .paragraphStyle: linkStyle
-    ]))
-    
-    content.append(NSAttributedString(string: "For updates visit : ", attributes: [
-        .font: NSFont.systemFont(ofSize: 11),
-        .foregroundColor: NSColor.labelColor,
-        .paragraphStyle: linkStyle
-    ]))
 
-    content.append(NSAttributedString(string: "snapbackapp.vercel.app\n\n", attributes: [
-        .font: NSFont.systemFont(ofSize: 11),
-        .foregroundColor: NSColor.linkColor,
-        .link: URL(string: "https://snapbackapp.vercel.app")!,
-        .paragraphStyle: linkStyle
-    ]))
-    // ----------------------------
-
-    addHeader("Required Permissions", icon: "🔐")
-    addBody("Ensure these are enabled in System Settings:")
-    
-    addDetailedItem("1. Accessibility", [
-        "- Required to move and resize windows.",
-        "- Go to Privacy & Security > Accessibility.",
-        "- Click '+' (or allow in list) to add '__APP_NAME__'."
-    ])
-    
-    addDetailedItem("2. Screen Recording", [
-        "- Required to save screenshot previews.",
-        "- Go to Privacy & Security > Screen Recording.",
-        "- Click '+' (or allow in list) to add '__APP_NAME__'."
-    ])
-    
-    addDetailedItem("3. Automation", [
-        "- Required to control Browser tabs/ Apps.",
-        "- Accept the system prompt when it appears."
-    ])
-    
-    addHeader("Troubleshooting", icon: "🛠")
-    addBody("If a window fails to move, remove __APP_NAME__ from Privacy & Security settings and re-add it to reset permissions.")
-    addHeader("Capture State", icon: "📸")
-    addBody("Click 'Save New...' to instantly record the geometry & state of any open app window and browser tab. This tool is designed for Power Users.")
-    
-    addHeader("Restore Layout", icon: "⚡️")
-    addBody("Select a profile and click 'Restore'. Windows snap to their grid coordinates; URLs reload automatically.")
-    
-    addHeader("File Management", icon: "📂")
-    addBody("Profiles are stored locally. You can rename or delete them directly via folder icon in app, or find them using Finder at:")
-    content.append(NSAttributedString(string: "~/Pictures/Snap Back Profiles\n", attributes: [
-        .font: codeFont,
-        .foregroundColor: NSColor.labelColor,
-        .paragraphStyle: bodyStyle
-    ]))
-
-    textView.textStorage?.setAttributedString(content)
-    
-    scrollView.documentView = textView
-    helpContainer.addSubview(scrollView)
-    
-    alert.accessoryView = helpContainer
-    alert.addButton(withTitle: "Got it")
-    alert.addButton(withTitle: "Check for Updates")
-    alert.addButton(withTitle: "Open Permissions")
-    alert.addButton(withTitle: "Contact Developer")
-    
-    let response = alert.runModal()
-    
-    if response == .alertSecondButtonReturn {
-        checkForUpdates(isManual: true)
-    } else if response == .alertThirdButtonReturn {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-            NSWorkspace.shared.open(url)
-        }
-    } else if response == NSApplication.ModalResponse(rawValue: 1003) {
-        if let url = URL(string: "mailto:arunthomas04042001@gmail.com") {
-            NSWorkspace.shared.open(url)
-        }
+    struct AboutFeature {
+        let symbol: String
+        let color: NSColor
+        let title: String
+        let desc: String
     }
+
+    let features: [AboutFeature] = [
+        AboutFeature(symbol: "camera.viewfinder", color: .systemCyan, title: "Instant Layout Snapshots", desc: "Saves multi-monitor window geometry and active browser tabs with zero latency."),
+        AboutFeature(symbol: "arrow.counterclockwise.circle.fill", color: .systemGreen, title: "1-Click Layout Restore", desc: "Instantly brings all open application windows and browser tabs back to their exact recorded positions."),
+        AboutFeature(symbol: "lock.shield.fill", color: .systemPurple, title: "100% On-Device & Private", desc: "All window coordinates, screenshots, and workspace profiles stay strictly local on your Mac."),
+        AboutFeature(symbol: "slider.horizontal.3", color: .systemBlue, title: "Multi-Profile Management", desc: "Seamlessly switch between Work, Coding, Reading, and Meeting workspace arrangements."),
+        AboutFeature(symbol: "chevron.left.forwardslash.chevron.right", color: .systemPink, title: "Free & Open Source", desc: "SnapBack is free and open source. Check out the project repository on GitHub.")
+    ]
+
+    let width: CGFloat = 460
+    let textWidth: CGFloat = width - 115
+    let para = NSMutableParagraphStyle()
+    para.lineSpacing = 2
+    let textFont = NSFont.systemFont(ofSize: 11.5, weight: .regular)
+    let titleFont = NSFont.systemFont(ofSize: 13, weight: .semibold)
+
+    var featureHeights: [CGFloat] = []
+    var totalFeaturesHeight: CGFloat = 0
+    for f in features {
+        let attr = NSAttributedString(string: f.desc, attributes: [
+            .font: textFont,
+            .paragraphStyle: para
+        ])
+        let measured = attr.boundingRect(
+            with: NSSize(width: textWidth, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading])
+        let h = ceil(measured.height) + 24
+        featureHeights.append(h)
+        totalFeaturesHeight += h + 16
+    }
+    totalFeaturesHeight -= 16
+
+    let headerHeight: CGFloat = 204
+    let bottomSpaceNeeded: CGFloat = 124
+    let finalHeight = headerHeight + totalFeaturesHeight + bottomSpaceNeeded
+
+    let win = NSWindow(
+        contentRect: NSRect(x: 0, y: 0, width: width, height: finalHeight),
+        styleMask: [.titled, .closable, .fullSizeContentView],
+        backing: .buffered, defer: false
+    )
+    win.titleVisibility = .hidden
+    win.titlebarAppearsTransparent = true
+    win.isMovableByWindowBackground = true
+    win.standardWindowButton(.miniaturizeButton)?.isHidden = true
+    win.standardWindowButton(.zoomButton)?.isHidden = true
+    win.center()
+    win.isReleasedWhenClosed = false
+    win.level = .floating
+
+    let bg = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: width, height: finalHeight))
+    bg.material = .popover
+    bg.blendingMode = .behindWindow
+    bg.state = .active
+
+    let icon = NSImageView(frame: NSRect(x: (width - 64)/2, y: finalHeight - 88, width: 64, height: 64))
+    icon.image = NSImage(named: "AppIcon") ?? NSApp.applicationIconImage
+    icon.imageScaling = .scaleProportionallyUpOrDown
+    bg.addSubview(icon)
+
+    let title = NSTextField(labelWithString: "__APP_NAME__")
+    title.font = NSFont.systemFont(ofSize: 24, weight: .bold)
+    title.alignment = .center
+    title.frame = NSRect(x: 0, y: finalHeight - 124, width: width, height: 28)
+    bg.addSubview(title)
+
+    let currentVer = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "__APP_VERSION__"
+    let ver = NSTextField(labelWithString: "Version \(currentVer)")
+    ver.font = NSFont.systemFont(ofSize: 11.5, weight: .medium)
+    ver.textColor = .tertiaryLabelColor
+    ver.alignment = .center
+    ver.frame = NSRect(x: 0, y: finalHeight - 144, width: width, height: 15)
+    bg.addSubview(ver)
+
+    let sub = NSTextField(labelWithString: "Instant Window & Tab Layout Snapshots for macOS")
+    sub.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+    sub.textColor = .secondaryLabelColor
+    sub.alignment = .center
+    sub.frame = NSRect(x: 16, y: finalHeight - 168, width: width - 32, height: 16)
+    bg.addSubview(sub)
+
+    var currentY = finalHeight - headerHeight
+    for (i, f) in features.enumerated() {
+        let itemH = featureHeights[i]
+        let itemY = currentY - itemH
+
+        let symSize: CGFloat = 24
+        let symView = NSImageView(frame: NSRect(x: 36, y: itemY + (itemH - symSize)/2 + 2, width: symSize, height: symSize))
+        let symCfg = NSImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
+        symView.image = NSImage(systemSymbolName: f.symbol, accessibilityDescription: nil)?
+            .withSymbolConfiguration(symCfg)
+        symView.contentTintColor = f.color
+        bg.addSubview(symView)
+
+        let titleLabel = NSTextField(labelWithString: f.title)
+        titleLabel.frame = NSRect(x: 74, y: itemY + itemH - 20, width: textWidth, height: 18)
+        titleLabel.font = titleFont
+        titleLabel.textColor = .labelColor
+        titleLabel.isEditable = false
+        titleLabel.drawsBackground = false
+        titleLabel.isBordered = false
+        bg.addSubview(titleLabel)
+
+        let attr = NSAttributedString(string: f.desc, attributes: [
+            .font: textFont,
+            .foregroundColor: NSColor.secondaryLabelColor,
+            .paragraphStyle: para
+        ])
+        let descLabel = NSTextField(labelWithAttributedString: attr)
+        descLabel.frame = NSRect(x: 74, y: itemY, width: textWidth, height: itemH - 22)
+        descLabel.lineBreakMode = .byWordWrapping
+        descLabel.maximumNumberOfLines = 0
+        descLabel.isEditable = false
+        descLabel.drawsBackground = false
+        descLabel.isBordered = false
+        bg.addSubview(descLabel)
+
+        currentY = itemY - 16
+    }
+
+    // Author Note
+    let credit = NSTextField(labelWithString: "Built by Arun Thomas")
+    credit.frame = NSRect(x: 0, y: 78, width: width, height: 16)
+    credit.alignment = .center
+    credit.font = NSFont.systemFont(ofSize: 11.5, weight: .semibold)
+    credit.textColor = .secondaryLabelColor
+    bg.addSubview(credit)
+
+    // Action Buttons
+    let buttonsY: CGFloat = 26
+    let contactW: CGFloat = 92
+    let gitW: CGFloat = 92
+    let updateW: CGFloat = 92
+    let closeW: CGFloat = 104
+    let spacing: CGFloat = 10
+    let totalW = contactW + gitW + updateW + closeW + (3 * spacing)
+    let startX = (width - totalW) / 2
+
+    let contact = NSButton(title: "Contact", target: nil, action: nil)
+    contact.frame = NSRect(x: startX, y: buttonsY, width: contactW, height: 34)
+    contact.isBordered = false
+    contact.wantsLayer = true
+    contact.layer?.backgroundColor = NSColor.white.cgColor
+    contact.layer?.cornerRadius = 17
+    contact.layer?.masksToBounds = true
+    contact.attributedTitle = NSAttributedString(string: "Contact", attributes: [
+        .foregroundColor: NSColor.black,
+        .font: NSFont.systemFont(ofSize: 12.5, weight: .medium)
+    ])
+    contact.target = AboutActionHandler.shared
+    contact.action = #selector(AboutActionHandler.contactDev)
+    bg.addSubview(contact)
+
+    let github = NSButton(title: "GitHub", target: nil, action: nil)
+    github.frame = NSRect(x: startX + contactW + spacing, y: buttonsY, width: gitW, height: 34)
+    github.isBordered = false
+    github.wantsLayer = true
+    github.layer?.backgroundColor = NSColor.black.cgColor
+    github.layer?.cornerRadius = 17
+    github.layer?.masksToBounds = true
+    github.attributedTitle = NSAttributedString(string: "GitHub", attributes: [
+        .foregroundColor: NSColor.white,
+        .font: NSFont.systemFont(ofSize: 12.5, weight: .medium)
+    ])
+    github.target = AboutActionHandler.shared
+    github.action = #selector(AboutActionHandler.openGit)
+    bg.addSubview(github)
+
+    let update = NSButton(title: "Updates", target: nil, action: nil)
+    update.frame = NSRect(x: startX + contactW + spacing + gitW + spacing, y: buttonsY, width: updateW, height: 34)
+    update.isBordered = false
+    update.wantsLayer = true
+    update.layer?.backgroundColor = NSColor.secondaryLabelColor.withAlphaComponent(0.3).cgColor
+    update.layer?.cornerRadius = 17
+    update.layer?.masksToBounds = true
+    update.attributedTitle = NSAttributedString(string: "Updates", attributes: [
+        .foregroundColor: NSColor.white,
+        .font: NSFont.systemFont(ofSize: 12.5, weight: .medium)
+    ])
+    update.target = AboutActionHandler.shared
+    update.action = #selector(AboutActionHandler.checkUpdates)
+    aboutUpdateBtn = update
+    bg.addSubview(update)
+
+    let close = NSButton(title: "Done", target: nil, action: nil)
+    close.frame = NSRect(x: startX + contactW + spacing + gitW + spacing + updateW + spacing, y: buttonsY, width: closeW, height: 34)
+    close.isBordered = false
+    close.wantsLayer = true
+    close.layer?.backgroundColor = NSColor.controlAccentColor.cgColor
+    close.layer?.cornerRadius = 17
+    close.layer?.masksToBounds = true
+    close.keyEquivalent = "\r"
+    close.attributedTitle = NSAttributedString(string: "Done", attributes: [
+        .foregroundColor: NSColor.white,
+        .font: NSFont.systemFont(ofSize: 12.5, weight: .medium)
+    ])
+    close.target = AboutActionHandler.shared
+    close.action = #selector(AboutActionHandler.closeAboutWin)
+    bg.addSubview(close)
+
+    win.delegate = AboutActionHandler.shared
+    win.contentView = bg
+    win.makeKeyAndOrderFront(nil)
+    NSApp.activate(ignoringOtherApps: true)
+    aboutWindow = win
+    NSApp.runModal(for: win)
 }
 
 func deleteProfile(name: String) -> Bool {

@@ -1,6 +1,13 @@
 {
-  "version": "1.0.7",
+  "version": "1.0.8",
   "changelog": [
+    {
+      "version": "1.0.8",
+      "date": "2026-08-21",
+      "changes": [
+        "Unified Design System & In-App Updates: Redesigned About window with signature popover styling, in-app update checker button with live loading state, hardware-accelerated changelog viewer, and upgraded Permissions & Setup guide with live polling checkmarks."
+      ]
+    },
     {
       "version": "1.0.7",
       "date": "2026-08-21",
