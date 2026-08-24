@@ -190,9 +190,11 @@
 
     <!-- Hero Section -->
     <section class="pt-24 pb-20 px-6 max-w-7xl mx-auto text-center">
-        <div id="version-pill" class="version-pill inline-block px-3 py-1 mb-6 rounded-full bg-neon-purple/10 border border-neon-purple/30 text-neon-purple text-xs font-mono">
-            Latest Version
-        </div>
+        <a id="version-pill" href="https://github.com/arunofhyd/SnapBack/releases/latest" target="_blank" rel="noopener noreferrer"
+           class="version-pill inline-flex items-center gap-1.5 px-3.5 py-1 mb-6 rounded-full bg-neon-purple/10 border border-neon-purple/30 text-neon-purple text-xs font-mono hover:bg-neon-purple/20 transition-all cursor-pointer">
+            <span>Latest Version</span>
+            <span class="opacity-60 text-[10px]">↗</span>
+        </a>
         <script>
             // Fetch version and app name from install-snapback.command
             fetch('/install-snapback.command')
@@ -204,7 +206,10 @@
 
                     if (version) {
                         const pill = document.getElementById('version-pill');
-                        if (pill) pill.textContent = `v${version} Now Available`;
+                        if (pill) {
+                            pill.innerHTML = `<span>v${version} Now Available</span> <span class="opacity-60 text-[10px]">↗</span>`;
+                            pill.href = `https://github.com/arunofhyd/SnapBack/releases/tag/v${version}`;
+                        }
                     }
 
                     // Extract App Name
@@ -246,7 +251,10 @@
                         const header = `
                             <div class="flex items-center justify-between mb-4">
                                 <div class="flex items-center gap-2.5">
-                                    <span class="text-neon-cyan font-mono font-bold text-lg">v${release.version}</span>
+                                    <a href="https://github.com/arunofhyd/SnapBack/releases/tag/v${release.version}" target="_blank" rel="noopener noreferrer" class="text-neon-cyan font-mono font-bold text-lg hover:underline flex items-center gap-1">
+                                        <span>v${release.version}</span>
+                                        <span class="text-xs opacity-60">↗</span>
+                                    </a>
                                     ${isLatest ? `<span class="bg-neon-cyan/20 text-neon-cyan text-[10px] font-bold px-2 py-0.5 rounded-full border border-neon-cyan/30 tracking-wider">LATEST</span>` : ''}
                                 </div>
                                 ${release.date ? `<span class="text-gray-400 text-xs font-mono px-2 py-0.5 rounded bg-white/5 border border-white/5">${release.date}</span>` : ''}
