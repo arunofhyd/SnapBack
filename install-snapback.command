@@ -486,10 +486,11 @@ func checkForUpdates(isManual: Bool = false) {
             if r < c { break }
         }
 
-        if updateAvailable {
-            var fullChangelog = ""
-            if let changes = json["changelog"] as? [[String: Any]] {
-                let unreadEntries = changes.filter { entry in
+        var fullChangelog = ""
+        if let changes = json["changelog"] as? [[String: Any]] {
+            let targetEntries: [[String: Any]]
+            if updateAvailable {
+                targetEntries = changes.filter { entry in
                     guard let v = (entry["version"] as? String)?.replacingOccurrences(of: "v", with: "") else { return false }
                     let rComp = v.split(separator: ".").compactMap { Int($0) }
                     let cComp = currentVer.split(separator: ".").compactMap { Int($0) }
@@ -501,14 +502,18 @@ func checkForUpdates(isManual: Bool = false) {
                     }
                     return false
                 }
-                fullChangelog = unreadEntries.compactMap { entry -> String? in
-                    guard let v = entry["version"] as? String,
-                          let notes = entry["changes"] as? [String] else { return nil }
-                    let list = notes.map { "• \($0)" }.joined(separator: "\n")
-                    return "Version \(v):\n\(list)"
-                }.joined(separator: "\n\n")
+            } else {
+                targetEntries = Array(changes.prefix(2))
             }
-            
+            fullChangelog = targetEntries.compactMap { entry -> String? in
+                guard let v = entry["version"] as? String,
+                      let notes = entry["changes"] as? [String] else { return nil }
+                let list = notes.map { "• \($0)" }.joined(separator: "\n")
+                return "Version \(v):\n\(list)"
+            }.joined(separator: "\n\n")
+        }
+
+        if updateAvailable {
             DispatchQueue.main.async {
                 let alert = NSAlert()
                 NSApp.activate(ignoringOtherApps: true)
@@ -534,9 +539,12 @@ func checkForUpdates(isManual: Bool = false) {
                 let alert = NSAlert()
                 NSApp.activate(ignoringOtherApps: true)
                 alert.icon = NSImage(named: "AppIcon") ?? NSApp.applicationIconImage
-                alert.messageText = "You're up to date"
+                alert.messageText = "You're Up to Date!"
                 let cur = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? currentVer
-                alert.informativeText = "__APP_NAME__ v\(cur) is the latest version."
+                alert.informativeText = "SnapBack v\(cur) is the latest version. Recent updates:"
+                if !fullChangelog.isEmpty {
+                    alert.accessoryView = createChangelogView(changelog: fullChangelog)
+                }
                 alert.addButton(withTitle: "OK")
                 alert.runModal()
             }
