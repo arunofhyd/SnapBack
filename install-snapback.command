@@ -1565,12 +1565,35 @@ printf "   ${NEON_GREEN}✔ Core Logic Integrated.${NC}\n\n"
 # --- STEP 5: COMPILATION & CLEANUP ---
 show_step 5 "Compiling Binary Executable..."
 
+BUILD_SUCCESS=false
 (
-swiftc SnapBack.swift -o "$APP_NAME.app/Contents/MacOS/SnapBack"
+swiftc SnapBack.swift -o "$APP_NAME.app/Contents/MacOS/SnapBack" 2>build_errors.txt
 ) &
 show_spinner $!
+wait $!
 
 if [ $? -eq 0 ]; then
+    BUILD_SUCCESS=true
+else
+    printf "   ${WARN_YELLOW}! Local compilation failed. Falling back to downloading pre-built release...${NC}\n"
+    ZIP_URL="https://github.com/arunofhyd/SnapBack/releases/download/v${APP_VERSION}/SnapBack.zip"
+    if ! curl -fsSL "$ZIP_URL" -o SnapBack.zip; then
+        ZIP_URL="https://github.com/arunofhyd/SnapBack/releases/latest/download/SnapBack.zip"
+        curl -fsSL "$ZIP_URL" -o SnapBack.zip || true
+    fi
+
+    if [ -f SnapBack.zip ]; then
+        rm -rf "$APP_NAME.app"
+        unzip -o -q SnapBack.zip
+        if [ -d "$APP_NAME.app" ] || [ -d "SnapBack.app" ]; then
+            [ -d "SnapBack.app" ] && [ "$APP_NAME.app" != "SnapBack.app" ] && mv "SnapBack.app" "$APP_NAME.app"
+            BUILD_SUCCESS=true
+            printf "   ${NEON_GREEN}✔ Pre-built app downloaded successfully.${NC}\n\n"
+        fi
+    fi
+fi
+
+if [ "$BUILD_SUCCESS" = "true" ]; then
     printf "   ${NEON_GREEN}✔ Compilation Complete.${NC}\n\n"
     
     show_step 6 "Finalizing and Signing..."
