@@ -26,7 +26,7 @@ NC='\033[0m' # No Color
 
 # Tactical Separator
 print_line() {
-    printf "${NEON_BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+    printf '%b\n' "${NEON_BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 }
 
 # Modular Step Function
@@ -35,7 +35,7 @@ show_step() {
     local desc="$2"
     # Pads number with zero if less than 10
     local fmt_num=$(printf "%02d" $step_num)
-    printf "${NEON_PURPLE}❯❯ [${fmt_num}] ${NEON_CYAN}${desc}${NC}\n"
+    printf '%b❯❯ [%s] %b%s%b\n' "${NEON_PURPLE}" "${fmt_num}" "${NEON_CYAN}" "${desc}" "${NC}"
 }
 
 # Spinner with rotating slash
@@ -46,7 +46,7 @@ show_spinner() {
     printf "  "
     while ps -p $pid > /dev/null 2>&1; do
         local temp=${spinstr#?}
-        printf "${NEON_GREEN}%c${NC}" "$spinstr"
+        printf '%b%c%b' "${NEON_GREEN}" "$spinstr" "${NC}"
         local spinstr=$temp${spinstr%"$temp"}
         sleep $delay
         printf "\b"
@@ -57,37 +57,37 @@ show_spinner() {
 # Cyber Header
 show_banner() {
     clear
-    printf "${NEON_CYAN}"
+    printf '%b' "${NEON_CYAN}"
     cat << "EOF"
  █▀ █▄ █ ▄▀█ █▀█  █▄▄ ▄▀█ █▀▀ █▄▀
  ▄█ █ ▀█ █▀█ █▀▀  █▄█ █▀█ █▄▄ █ █
 EOF
-    printf "${NC}\n"
+    printf '%b\n' "${NC}"
     print_line
-    printf " ${BOLD}BUILDER & INSTALLER PROTOCOL${NC}\n"
-    printf " ${TXT_GREY}Author: Arun Thomas${NC}\n"
+    printf ' %bBUILDER & INSTALLER PROTOCOL%b\n' "$BOLD" "$NC"
+    printf ' %bAuthor: Arun Thomas%b\n' "$TXT_GREY" "$NC"
     print_line
     printf "\n"
 }
 
 # High-Impact Outcome: Success
 show_success_art() {
-    printf "\n${NEON_GREEN}"
+    printf '\n%b' "${NEON_GREEN}"
     cat << "EOF"
  █▀ █ █ █▀▀ █▀▀ █▀▀ █▀ █▀
  ▄█ █▄█ █▄▄ █▄▄ ██▄ ▄█ ▄█
 EOF
-    printf "${NC}\n"
+    printf '%b\n' "${NC}"
 }
 
 # High-Impact Outcome: Failure
 show_failure_art() {
-    printf "\n${ALERT_RED}"
+    printf '\n%b' "${ALERT_RED}"
     cat << "EOF"
  █▀▀ ▄▀█ █ █   █▀▀ █▀▄
  █▀  █▀█ █ █▄▄ ██▄ █▄▀
 EOF
-    printf "${NC}\n"
+    printf '%b\n' "${NC}"
 }
 
 # --- WINDOW RESIZE ---
@@ -105,10 +105,10 @@ show_banner
 show_step 0 "Scanning system for compilation tools..."
 
 if ! xcode-select -p &>/dev/null; then
-    printf "   ${WARN_YELLOW}⚠ Tools missing. Initiating download sequence...${NC}\n"
+    printf '%b\n' "   ${WARN_YELLOW}⚠ Tools missing. Initiating download sequence...${NC}"
     xcode-select --install
     print_line
-    printf "   ${WARN_YELLOW}WAITING FOR USER INTERACTION...${NC}\n"
+    printf '%b\n' "   ${WARN_YELLOW}WAITING FOR USER INTERACTION...${NC}"
     printf "   Please complete the installer prompt.\n"
     printf "   Press [ENTER] when installation is confirmed..."
     read -r
@@ -116,12 +116,12 @@ if ! xcode-select -p &>/dev/null; then
     if ! xcode-select -p &>/dev/null; then
         show_failure_art
         printf "\n"
-        printf "   ${ALERT_RED}Installation not confirmed. Xcode Command Line Tools are required.${NC}\n"
-        printf "   ${TXT_GREY}Please rerun the script and complete the installation.${NC}\n"
+        printf '%b\n' "   ${ALERT_RED}Installation not confirmed. Xcode Command Line Tools are required.${NC}"
+        printf '%b\n' "   ${TXT_GREY}Please rerun the script and complete the installation.${NC}"
         exit 1
     fi
 else
-    printf "   ${NEON_GREEN}✔ Xcode Command Line Tools detected.${NC}\n"
+    printf '%b\n' "   ${NEON_GREEN}✔ Xcode Command Line Tools detected.${NC}"
 fi
 printf "\n"
 
@@ -130,7 +130,7 @@ printf "\n"
 BUILD_DIR=$(mktemp -d)
 
 show_step 1 "Initializing clean build workspace..."
-printf "   Target Path: ${TXT_GREY}$BUILD_DIR${NC}\n"
+printf '   Target Path: %b%s%b\n' "$TXT_GREY" "$BUILD_DIR" "$NC"
 
 # Move into the temp directory
 pushd "$BUILD_DIR" > /dev/null
@@ -249,7 +249,7 @@ sips -z 1024 1024 AppIcon.png --out AppIcon.iconset/icon_512x512@2x.png > /dev/n
 iconutil -c icns AppIcon.iconset
 ) &
 show_spinner $!
-printf "   ${NEON_GREEN}✔ Assets Compiled (New Logo).${NC}\n\n"
+printf '%b\n\n' "   ${NEON_GREEN}✔ Assets Compiled (New Logo).${NC}"
 
 # --- STEP 3: BUNDLE STRUCTURE ---
 show_step 3 "Constructing Application Bundle..."
@@ -290,7 +290,7 @@ EOF
 sed -i '' "s/__APP_VERSION__/$APP_VERSION/g" "$APP_NAME.app/Contents/Info.plist"
 sed -i '' "s/__APP_NAME__/$APP_NAME/g" "$APP_NAME.app/Contents/Info.plist"
 
-printf "   ${NEON_GREEN}✔ Info.plist injected.${NC}\n\n"
+printf '%b\n\n' "   ${NEON_GREEN}✔ Info.plist injected.${NC}"
 
 # --- STEP 4: SOURCE INJECTION ---
 show_step 4 "Injecting Source Code..."
@@ -1560,7 +1560,7 @@ EOF
 sed -i '' "s/__APP_VERSION__/$APP_VERSION/g" SnapBack.swift
 sed -i '' "s/__APP_NAME__/$APP_NAME/g" SnapBack.swift
 
-printf "   ${NEON_GREEN}✔ Core Logic Integrated.${NC}\n\n"
+printf '%b\n\n' "   ${NEON_GREEN}✔ Core Logic Integrated.${NC}"
 
 # --- STEP 5: COMPILATION & CLEANUP ---
 show_step 5 "Compiling Binary Executable..."
@@ -1575,7 +1575,7 @@ wait $!
 if [ $? -eq 0 ]; then
     BUILD_SUCCESS=true
 else
-    printf "   ${WARN_YELLOW}! Local compilation failed. Falling back to downloading pre-built release...${NC}\n"
+    printf '%b\n' "   ${WARN_YELLOW}! Local compilation failed. Falling back to downloading pre-built release...${NC}"
     ZIP_URL="https://github.com/arunofhyd/SnapBack/releases/download/v${APP_VERSION}/SnapBack.zip"
     if ! curl -fsSL "$ZIP_URL" -o SnapBack.zip; then
         ZIP_URL="https://github.com/arunofhyd/SnapBack/releases/latest/download/SnapBack.zip"
@@ -1588,13 +1588,13 @@ else
         if [ -d "$APP_NAME.app" ] || [ -d "SnapBack.app" ]; then
             [ -d "SnapBack.app" ] && [ "$APP_NAME.app" != "SnapBack.app" ] && mv "SnapBack.app" "$APP_NAME.app"
             BUILD_SUCCESS=true
-            printf "   ${NEON_GREEN}✔ Pre-built app downloaded successfully.${NC}\n\n"
+            printf '%b\n\n' "   ${NEON_GREEN}✔ Pre-built app downloaded successfully.${NC}"
         fi
     fi
 fi
 
 if [ "$BUILD_SUCCESS" = "true" ]; then
-    printf "   ${NEON_GREEN}✔ Compilation Complete.${NC}\n\n"
+    printf '%b\n\n' "   ${NEON_GREEN}✔ Compilation Complete.${NC}"
     
     show_step 6 "Finalizing and Signing..."
     
@@ -1603,9 +1603,9 @@ if [ "$BUILD_SUCCESS" = "true" ]; then
     chmod +x "$APP_NAME.app/Contents/Resources"
     
     # --- Ad-Hoc Signing ---
-    printf "   ${TXT_GREY}Applying local signature...${NC} "
+    printf '   %bApplying local signature...%b ' "$TXT_GREY" "$NC"
     codesign --force --deep -s - --requirements '=designated => identifier "com.aoh.snapback"' "$APP_NAME.app" &>/dev/null
-    printf "${NEON_GREEN}Secure.${NC}\n"
+    printf '%bSecure.%b\n' "$NEON_GREEN" "$NC"
     
     # --- STEP 6: DIRECT AUTO-INSTALL OR FALLBACK ---
     show_step 6 "Installing Snap Back to /Applications..."
@@ -1625,12 +1625,12 @@ if [ "$BUILD_SUCCESS" = "true" ]; then
 
     if [ "$INSTALLED" = "true" ]; then
         xattr -dr com.apple.quarantine "$DEST" >/dev/null 2>&1 || true
-        printf "   ${NEON_GREEN}✔ Snap Back installed to /Applications.${NC}\n\n"
+        printf '%b\n\n' "   ${NEON_GREEN}✔ Snap Back installed to /Applications.${NC}"
         print_line
         show_success_art
         print_line
         printf "\n"
-        printf "   ${NEON_CYAN}DEPLOYMENT COMPLETE:${NC} $APP_NAME (v$APP_VERSION) is now running in your menu bar.\n"
+        printf '   %bDEPLOYMENT COMPLETE:%b %s (v%s) is now running in your menu bar.\n' "$NEON_CYAN" "$NC" "$APP_NAME" "$APP_VERSION"
         open "$DEST"
         afplay /System/Library/Sounds/Glass.aiff 2>/dev/null || true
         popd > /dev/null
@@ -1963,8 +1963,8 @@ EOF
 else
     show_failure_art
     printf "\n"
-    printf "${ALERT_RED}CRITICAL ERROR:${NC} Compilation protocol failed.\n"
-    printf "${TXT_GREY}DEBUGGING:${NC} Review output log above for trace data.\n"
+    printf '%bCRITICAL ERROR:%b Compilation protocol failed.\n' "$ALERT_RED" "$NC"
+    printf '%bDEBUGGING:%b Review output log above for trace data.\n' "$TXT_GREY" "$NC"
     popd > /dev/null
     exit 1
 fi
