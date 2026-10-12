@@ -1,0 +1,11 @@
+<svg width="120" height="120" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Snap Back Logo">
+    <!-- Corners -->
+    <path d="M160 320V160H320" stroke="#00ffff" stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M704 160H864V320" stroke="#00ffff" stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M160 704V864H320" stroke="#00ffff" stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M704 864H864V704" stroke="#00ffff" stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Arc -->
+    <path d="M685 612A200 200 0 1 0 359 640" stroke="#00ffff" stroke-width="70" stroke-linecap="round"/>
+    <!-- Arrow Head -->
+    <path d="M394 682L393 527L343 621L241 655Z" fill="#00ffff"/>
+</svg>

@@ -1,0 +1,14 @@
+Tired of dragging and resizing windows after every reboot or monitor unplug? 🖥️
+
+I built Snap Back — a free native macOS window layout manager for power users.
+
+⚡ Instant restore: snap any app window back to its exact pixel coordinates in 1 click
+🌐 Smart Tabs: automatically saves & reopens active tabs in Safari, Chrome, Firefox, Arc & Brave
+📸 Visual Previews: see snapshot screenshots of your layout before restoring
+📂 Multi-profile: switch contexts instantly between Coding, Trading, and Design
+🔒 100% on-device: zero cloud sync, zero telemetry.
+
+One-line terminal install:
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/arunofhyd/SnapBack/main/install-snapback.command)"
+
+Open source: https://github.com/arunofhyd/SnapBack

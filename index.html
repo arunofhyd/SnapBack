@@ -306,6 +306,28 @@
                 <span>Download install-snapback.command</span>
             </a>
         </div>
+
+        <!-- Launch Video Showcase -->
+        <div class="mt-14 max-w-4xl mx-auto">
+            <div class="relative rounded-2xl overflow-hidden border border-neon-cyan/20 shadow-[0_25px_70px_rgba(0,0,0,0.9),0_0_40px_rgba(0,255,255,0.15)] bg-black/60">
+                <video id="snapback-launch-video" class="w-full aspect-video object-cover" poster="brag.jpg" playsinline preload="metadata" controls>
+                    <source src="brag.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="p-3.5 bg-neon-panel/90 backdrop-blur-md border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400">
+                    <div class="flex items-center gap-2">
+                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-neon-cyan animate-pulse"></span>
+                        <span class="font-semibold text-white">Snap Back Launch Film</span>
+                        <span>• 20s 1080p Product Tour (6.0MB)</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="toggleSnapBackVideo()" id="snapback-video-btn" class="px-3 py-1 rounded bg-neon-cyan/10 hover:bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30 transition-all font-sans font-semibold">
+                            ▶ Play Film
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- App Preview Mockup -->
         <div class="mt-8 relative group">
@@ -560,11 +582,45 @@
     </footer>
 
     <script>
+        function toggleSnapBackVideo() {
+            const video = document.getElementById('snapback-launch-video');
+            const btn = document.getElementById('snapback-video-btn');
+            if (!video) return;
+            if (video.paused) {
+                video.play();
+                if (btn) btn.textContent = '⏸ Pause Film';
+            } else {
+                video.pause();
+                if (btn) btn.textContent = '▶ Play Film';
+            }
+        }
+
+        // Typing effect & video event listeners
         document.addEventListener('DOMContentLoaded', function() {
+            const vid = document.getElementById('snapback-launch-video');
+            if (vid) {
+                vid.addEventListener('play', () => {
+                    const btn = document.getElementById('snapback-video-btn');
+                    if (btn) btn.textContent = '⏸ Pause Film';
+                });
+                vid.addEventListener('pause', () => {
+                    const btn = document.getElementById('snapback-video-btn');
+                    if (btn) btn.textContent = '▶ Play Film';
+                });
+                vid.addEventListener('ended', () => {
+                    const btn = document.getElementById('snapback-video-btn');
+                    if (btn) btn.textContent = '▶ Replay Film';
+                });
+            }
+
             const textElement = document.getElementById('typing-text');
             if (!textElement) return;
 
-            const phrases = ["your Window Layout.", "to Begin Again.", "your Workspace."];
+            const phrases = [
+                "your Window Layout.",
+                "your Browser Tabs.",
+                "your Workspace Context."
+            ];
             let phraseIndex = 0;
             let charIndex = 0;
             let isDeleting = false;

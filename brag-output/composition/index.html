@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>Snap Back — macOS Window Layout Manager Launch Film</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html {
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            background-color: #07090e;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #ffffff;
+        }
+
+        .stage-wrapper {
+            position: relative;
+            width: 1920px;
+            height: 1080px;
+            background: radial-gradient(circle at 50% 15%, #141624 0%, #080a10 60%, #030406 100%);
+            overflow: hidden;
+        }
+
+        /* Ambient Cyan & Purple Glow */
+        .glow-cyan {
+            position: absolute;
+            width: 800px;
+            height: 500px;
+            top: -100px;
+            left: 200px;
+            background: radial-gradient(ellipse, rgba(0, 255, 255, 0.12) 0%, rgba(0, 255, 255, 0) 70%);
+            pointer-events: none;
+            filter: blur(80px);
+        }
+
+        .glow-purple {
+            position: absolute;
+            width: 800px;
+            height: 500px;
+            top: -100px;
+            right: 200px;
+            background: radial-gradient(ellipse, rgba(168, 85, 247, 0.12) 0%, rgba(168, 85, 247, 0) 70%);
+            pointer-events: none;
+            filter: blur(80px);
+        }
+
+        /* Scenes container */
+        .scene {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .scene.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Pill Badge */
+        .neon-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 24px;
+            border-radius: 9999px;
+            background: rgba(0, 255, 255, 0.08);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: 600;
+            color: #00ffff;
+            letter-spacing: 0.05em;
+            margin-bottom: 28px;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
+            backdrop-filter: blur(12px);
+        }
+
+        .title-huge {
+            font-size: 82px;
+            font-weight: 900;
+            line-height: 1.08;
+            text-align: center;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #FFFFFF 0%, #00ffff 50%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 24px;
+        }
+
+        .subtitle {
+            font-size: 32px;
+            font-weight: 400;
+            color: #94a3b8;
+            text-align: center;
+            max-width: 1200px;
+            line-height: 1.45;
+        }
+
+        /* Scene 1: Chaos card */
+        .chaos-card {
+            margin-top: 48px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 24px 36px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            border-radius: 20px;
+            font-size: 26px;
+            font-weight: 600;
+            color: #fca5a5;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Scene 2: Reveal & Mockup */
+        .snap-mockup {
+            margin-top: 46px;
+            width: 1000px;
+            background: rgba(18, 20, 28, 0.85);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 24px;
+            padding: 30px 40px;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9), 0 0 40px rgba(0, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+        }
+
+        .window-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 24px;
+        }
+
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            height: 180px;
+        }
+
+        .mock-win {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .mock-win.active {
+            border-color: rgba(0, 255, 255, 0.5);
+            background: rgba(0, 255, 255, 0.05);
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.15);
+        }
+
+        /* Scene 3: Features Grid */
+        .features-grid {
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 28px;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 36px 30px;
+            text-align: left;
+        }
+
+        .feature-card.highlight {
+            border-color: rgba(0, 255, 255, 0.4);
+            background: rgba(0, 255, 255, 0.06);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .card-icon {
+            font-size: 38px;
+            margin-bottom: 18px;
+        }
+
+        .card-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 12px;
+        }
+
+        .card-desc {
+            font-size: 18px;
+            color: #94a3b8;
+            line-height: 1.45;
+        }
+
+        /* Scene 4: Multi Profile */
+        .profile-pills {
+            margin-top: 40px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .profile-pill {
+            padding: 18px 36px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .profile-pill.active {
+            background: rgba(168, 85, 247, 0.15);
+            border-color: rgba(168, 85, 247, 0.6);
+            color: #e9d5ff;
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.3);
+        }
+
+        /* Scene 5: Install */
+        .install-box {
+            margin-top: 40px;
+            width: 1100px;
+            background: rgba(10, 12, 18, 0.95);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 28px 36px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 22px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 255, 255, 0.15);
+        }
+
+        .install-cmd {
+            color: #00ffff;
+            font-weight: 600;
+            user-select: all;
+        }
+    </style>
+</head>
+<body>
+    <div class="stage-wrapper">
+        <div class="glow-cyan"></div>
+        <div class="glow-purple"></div>
+
+        <!-- SCENE 1: The Problem (t=0.0 - 3.5s) -->
+        <div id="scene-1" class="scene active">
+            <div class="neon-pill">⚠️ DESKTOP CHAOS AFTER EVERY REBOOT</div>
+            <h1 class="title-huge">Windows scattered everywhere.<br>Tabs lost in the void.</h1>
+            <p class="subtitle">Unplugged your external monitor? Manually dragging, resizing, and reopening tabs wastes 15 minutes every morning.</p>
+            <div class="chaos-card">
+                <span>🐌</span>
+                <span>Manual Window Dragging: Eyeballing coords • Lost Safari & Chrome tabs</span>
+            </div>
+        </div>
+
+        <!-- SCENE 2: The Solution (t=3.5 - 8.0s) -->
+        <div id="scene-2" class="scene">
+            <div class="neon-pill">⚡ INTRODUCING SNAP BACK</div>
+            <h1 class="title-huge">One click to snap back<br>your entire workspace.</h1>
+            <p class="subtitle">Instantly save and restore any app window layout and browser session on macOS.</p>
+            <div class="snap-mockup">
+                <div class="window-header">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <span style="font-size: 26px;">🎯</span>
+                        <div>
+                            <div style="font-size: 22px; font-weight: 800; color: #fff;">Snap Back</div>
+                            <div style="font-size: 15px; color: #00ffff; font-family: 'JetBrains Mono', monospace;">Profile: Full Stack Development</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; background: rgba(0, 255, 255, 0.15); padding: 8px 18px; border-radius: 9999px; border: 1px solid rgba(0, 255, 255, 0.3);">
+                        <span style="color: #00ffff; font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700;">⚡ Restored in 0.4s</span>
+                    </div>
+                </div>
+                <div class="layout-grid">
+                    <div class="mock-win active">
+                        <span style="font-size: 14px; font-family: 'JetBrains Mono', monospace; color: #00ffff;">VS Code • (0, 0, 1280, 1080)</span>
+                        <span style="font-size: 13px; color: #94a3b8;">Restored to exact pixel coordinates</span>
+                    </div>
+                    <div class="mock-win active">
+                        <span style="font-size: 14px; font-family: 'JetBrains Mono', monospace; color: #c084fc;">Arc / Safari • 6 Tabs</span>
+                        <span style="font-size: 13px; color: #94a3b8;">Tabs auto-reopened & synced</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCENE 3: Smart Tabs & Precision (t=8.0 - 13.0s) -->
+        <div id="scene-3" class="scene">
+            <div class="neon-pill">🎯 PIXEL-PERFECT CONTROL</div>
+            <h1 class="title-huge">Smart Browser Tabs.<br>Exact coordinates.</h1>
+            <p class="subtitle">Never lose an active research session again. Supports all major macOS browsers natively.</p>
+            <div class="features-grid">
+                <div class="feature-card highlight">
+                    <div class="card-icon">🌐</div>
+                    <div class="card-title">Smart Tabs Restore</div>
+                    <div class="card-desc">Safari, Chrome, Firefox, Arc & Brave tabs are automatically saved and restored.</div>
+                </div>
+                <div class="feature-card highlight">
+                    <div class="card-icon">📐</div>
+                    <div class="card-title">Pixel-Perfect</div>
+                    <div class="card-desc">Saves exact window bounds across multiple external displays with zero approximation.</div>
+                </div>
+                <div class="feature-card highlight">
+                    <div class="card-icon">📸</div>
+                    <div class="card-title">Visual Previews</div>
+                    <div class="card-desc">Captures snapshot screenshots of your layout so you know exactly what you're loading.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCENE 4: Multi-Profiles & Local Privacy (t=13.0 - 17.0s) -->
+        <div id="scene-4" class="scene">
+            <div class="neon-pill">📂 WORKSPACE CONTEXT SWITCHING</div>
+            <h1 class="title-huge">Switch contexts instantly.<br>100% on-device.</h1>
+            <p class="subtitle">Create tailored profiles for coding, trading, writing, or design. No cloud sync, zero telemetry.</p>
+            <div class="profile-pills">
+                <div class="profile-pill active">
+                    <span>💻</span>
+                    <span>Coding & Debug</span>
+                </div>
+                <div class="profile-pill">
+                    <span>📈</span>
+                    <span>Trading Desk</span>
+                </div>
+                <div class="profile-pill">
+                    <span>🎨</span>
+                    <span>Design & Figma</span>
+                </div>
+            </div>
+            <div style="margin-top: 36px; font-size: 20px; color: #94a3b8; font-family: 'JetBrains Mono', monospace;">
+                📁 Profiles saved locally in <strong>~/Pictures/Snap Back Profiles</strong>
+            </div>
+        </div>
+
+        <!-- SCENE 5: Install & Call to Action (t=17.0 - 20.0s) -->
+        <div id="scene-5" class="scene">
+            <div class="neon-pill">🚀 POWER UP YOUR MAC</div>
+            <h1 class="title-huge">Install Snap Back.<br>Free & open source.</h1>
+            <p class="subtitle">Built with Swift & AppleScript for native macOS speed and zero overhead.</p>
+            <div class="install-box">
+                <span class="install-cmd">/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/arunofhyd/SnapBack/main/install-snapback.command)"</span>
+                <span style="font-size: 18px; color: #00ffff; background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); padding: 8px 16px; border-radius: 8px;">1-Click Install</span>
+            </div>
+            <div style="margin-top: 30px; font-size: 22px; color: #64748b; font-family: 'JetBrains Mono', monospace;">
+                github.com/arunofhyd/SnapBack
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function seekTo(t) {
+            const scenes = [
+                { id: 'scene-1', start: 0.0, end: 3.5 },
+                { id: 'scene-2', start: 3.5, end: 8.0 },
+                { id: 'scene-3', start: 8.0, end: 13.0 },
+                { id: 'scene-4', start: 13.0, end: 17.0 },
+                { id: 'scene-5', start: 17.0, end: 20.0 }
+            ];
+
+            scenes.forEach(s => {
+                const el = document.getElementById(s.id);
+                if (el) {
+                    if (t >= s.start && t < s.end) {
+                        el.classList.add('active');
+                    } else {
+                        el.classList.remove('active');
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
