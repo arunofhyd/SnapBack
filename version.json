@@ -1,6 +1,14 @@
 {
-  "version": "1.0.9",
+  "version": "1.0.10",
+  "downloadURL": "https://snapback-aoh.vercel.app/#install",
   "changelog": [
+    {
+      "version": "1.0.10",
+      "date": "2026-11-20",
+      "changes": [
+        "Version Synchronization & Auto-Update Engine Fix: Overhauled update installer to dynamically resolve latest release version from version.json in both local and standalone execution. Fixed CI auto-release pipeline and release artifact packaging to prevent version mismatch loops."
+      ]
+    },
     {
       "version": "1.0.9",
       "date": "2026-09-02",

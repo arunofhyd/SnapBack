@@ -27,7 +27,7 @@ jobs:
         id: get_changelog
         run: |
           # Extract the changes array for the current version and format as a bulleted list
-          CHANGELOG=$(jq -r --arg v "v$VERSION" '.changelog[] | select(.version == $v) | .changes[] | "- " + .' version.json)
+          CHANGELOG=$(jq -r --arg v "$VERSION" '.changelog[] | select(.version == $v or .version == ("v" + $v)) | .changes[] | "- " + .' version.json)
           
           # Use EOF for multi-line GitHub Actions environment variable
           echo "CHANGELOG<<EOF" >> $GITHUB_ENV
@@ -59,13 +59,13 @@ jobs:
         run: |
           # The script builds to 'Snap Back.app' (or 'SnapBack.app')
           # Check what the actual folder name is to zip it correctly
-          APP_DIR=$(find . -maxdepth 1 -name "*.app" | head -n 1)
+          APP_DIR=$(find . -maxdepth 2 -name "*.app" | head -n 1)
           if [ -z "$APP_DIR" ]; then
             echo "Error: App bundle not found!"
             exit 1
           fi
           
-          zip -r "SnapBack.zip" "$APP_DIR"
+          ditto -c -k --keepParent "$APP_DIR" "SnapBack.zip"
 
       - name: Create Release
         if: env.skip == 'false'

@@ -1,11 +1,15 @@
 #!/bin/bash
 
 # --- CONFIGURATION ---
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]:-$0}" )" >/dev/null 2>&1 && pwd )"
 if [ -f "$SCRIPT_DIR/version.json" ]; then
-    APP_VERSION=$(python3 -c "import json; print(json.load(open('$SCRIPT_DIR/version.json'))['version'])" 2>/dev/null || echo "1.0.8")
-else
-    APP_VERSION="1.0.8"
+    APP_VERSION=$(python3 -c "import json; print(json.load(open('$SCRIPT_DIR/version.json'))['version'])" 2>/dev/null)
+fi
+if [ -z "$APP_VERSION" ]; then
+    APP_VERSION=$(curl -fsSL "https://raw.githubusercontent.com/arunofhyd/SnapBack/main/version.json" 2>/dev/null | python3 -c "import sys, json; print(json.load(sys.stdin)['version'])" 2>/dev/null)
+fi
+if [ -z "$APP_VERSION" ]; then
+    APP_VERSION="1.0.10"
 fi
 APP_NAME="Snap Back"
 
@@ -475,8 +479,10 @@ func checkForUpdates(isManual: Bool = false) {
             return
         }
 
-        let rComponents = remoteVer.split(separator: ".").compactMap { Int($0) }
-        let cComponents = currentVer.split(separator: ".").compactMap { Int($0) }
+        let rClean = remoteVer.trimmingCharacters(in: CharacterSet(charactersIn: "vV "))
+        let cClean = currentVer.trimmingCharacters(in: CharacterSet(charactersIn: "vV "))
+        let rComponents = rClean.split(separator: ".").compactMap { Int($0) }
+        let cComponents = cClean.split(separator: ".").compactMap { Int($0) }
 
         var updateAvailable = false
         for i in 0..<max(rComponents.count, cComponents.count) {
@@ -1606,6 +1612,18 @@ if [ "$BUILD_SUCCESS" = "true" ]; then
     printf '   %bApplying local signature...%b ' "$TXT_GREY" "$NC"
     codesign --force --deep -s - --requirements '=designated => identifier "com.aoh.snapback"' "$APP_NAME.app" &>/dev/null
     printf '%bSecure.%b\n' "$NEON_GREEN" "$NC"
+
+    if [ "$CI" = "true" ]; then
+        printf '   %bCI Mode detected: exporting build artifacts...%b\n' "$NEON_GREEN" "$NC"
+        mkdir -p "$SCRIPT_DIR/Build"
+        cp -R "$APP_NAME.app" "$SCRIPT_DIR/Build/SnapBack.app"
+        cp -R "$APP_NAME.app" "$SCRIPT_DIR/$APP_NAME.app"
+        cp -R "$APP_NAME.app" "$SCRIPT_DIR/SnapBack.app"
+        popd > /dev/null
+        rm -rf "$BUILD_DIR"
+        printf '   %b✔ CI Build artifacts ready at repository root.%b\n' "$NEON_GREEN" "$NC"
+        exit 0
+    fi
     
     # --- STEP 6: DIRECT AUTO-INSTALL OR FALLBACK ---
     show_step 6 "Installing Snap Back to /Applications..."
